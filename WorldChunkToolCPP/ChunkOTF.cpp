@@ -6,22 +6,22 @@
 
 namespace fs = std::filesystem;
 
-ChunkOTF::ChunkOTF(const oo2core_loader * oo2coreInstance_)
+ChunkOTF::ChunkOTF(const oo2core_loader* oo2coreInstance_)
 {
 	this->oo2coreInstance = oo2coreInstance_;
 }
 
-std::vector<FileNode> ChunkOTF::AnalyzeChunk(const std::string& FileInput, const std::vector<FileNode>& inputFileList, bool FlagBaseGame)
+std::list<FileNode*> ChunkOTF::AnalyzeChunk(const std::string& FileInput, std::list<FileNode*>& inputFileList, bool FlagBaseGame)
 {
 	fileinput = FileInput; // store the file input
 
 	ChunkCache = std::map<int, std::vector<uint8_t>>();
 
-	std::vector<FileNode> filelist = inputFileList;
+	std::list<FileNode*> filelist = inputFileList;
 	MetaChunk = std::map<int64_t, int64_t>();
 	ChunkOffsetDict = std::map<int, int64_t>();
 	std::string NamePKG = fs::path(FileInput).replace_extension(".pkg").string(); // finally something good out of C++17
-	Reader = std::ifstream(FileInput,std::ios::in);
+	Reader = std::ifstream(FileInput, std::ios::in);
 
 	// Read header
 	Reader.seekg(4, std::ios_base::beg); // skipping the MagicChunk of size int
@@ -90,7 +90,7 @@ std::vector<FileNode> ChunkOTF::AnalyzeChunk(const std::string& FileInput, const
 	cur_pointer += 4;
 	int TotalChildrenCount = *(int*)(ChunkDecompressed.data() + cur_pointer);
 	cur_pointer = 0x100;
-	FileNode root_node;
+	FileNode* root_node = nullptr;
 	for (int i = 0; i < TotalParentCount; i++)
 	{
 		std::string StringNameParent = getName(0x3C, FlagBaseGame);
@@ -101,22 +101,23 @@ std::vector<FileNode> ChunkOTF::AnalyzeChunk(const std::string& FileInput, const
 
 		if (filelist.size() == 0)
 		{
-			root_node = FileNode(StringNameParent, false, FileInput);
-			root_node.EntireName = root_node.Name;
+			root_node = new FileNode(StringNameParent, false, FileInput);
+			root_node->EntireName = root_node->Name;
 			filelist.emplace_back(root_node);
 		}
 		else
 		{
-			root_node = filelist[0];
-			root_node.FromChunk = fileinput;
-			root_node.FromChunkName = fs::path(FileInput).replace_extension("").string(); // atcually removed the extension
+			root_node = filelist.front();
+			root_node->FromChunk = fileinput;
+			root_node->FromChunkName = fs::path(FileInput).replace_extension("").string(); // atcually removed the extension
 		}
+
 		for (int j = 0; j < CountChildren; j++)
 		{
 			int origin_pointer = cur_pointer;
 			int origin_loc = cur_index;
-			if (ChunkCache.count(cur_index)==0) ChunkCache.emplace(cur_index, ChunkDecompressed);
-			if (ChunkCache.count(cur_index + 1)==0) ChunkCache.emplace(cur_index + 1, NextChunkDecompressed);
+			if (ChunkCache.count(cur_index) == 0) ChunkCache.emplace(cur_index, ChunkDecompressed);
+			if (ChunkCache.count(cur_index + 1) == 0) ChunkCache.emplace(cur_index + 1, NextChunkDecompressed);
 
 			std::string StringNameChild = getName(0xA0, FlagBaseGame);
 			FileSize = getInt64(FlagBaseGame);
@@ -151,46 +152,48 @@ std::vector<FileNode> ChunkOTF::AnalyzeChunk(const std::string& FileInput, const
 				child_node.ChunkPointer = (int)(FileOffset % 0x40000);
 			}
 			child_node.EntireName = StringNameChild;
-			FileNode target_node = root_node;
-			for(std::string node_name : fathernodes)
+			FileNode* target_node = root_node;
+			for (std::string node_name : fathernodes)
 			{
 				if (node_name.empty()) continue;
-				for(FileNode& node : target_node.Childern)
+				for (FileNode* node : target_node->Childern)
 				{
-					if (node.Name == node_name)
+					if (node->Name == node_name)
 					{
-						if (node.Name == child_node.Name) { break; }
+						if (node->Name == child_node.Name) { break; }
 						target_node = node;
 						break;
 					}
 				}
 			}
 			bool need_add = true;
-			for(FileNode &tmp_node : target_node.Childern)
+			for (FileNode* tmp_node : target_node->Childern)
 			{
-				if (tmp_node.Name == child_node.Name)
+				if (tmp_node->Name == child_node.Name)
 				{
-					if (child_node.IsFile) target_node.Childern.remove(tmp_node);
+					if (child_node.IsFile) target_node->Childern.remove(tmp_node);
 					else
 					{
-						tmp_node.FromChunk = child_node.FromChunk; tmp_node.FromChunkName = child_node.FromChunkName;
+						tmp_node->FromChunk = child_node.FromChunk;
+						tmp_node->FromChunkName = child_node.FromChunkName;
 						need_add = false;
 					}
 					break;
 				}
 			}
-			if (need_add) target_node.Childern.emplace_back(child_node);
+			if (need_add)
+				target_node->Childern.emplace_back(child_node);
 		}
 	}
 	ChunkCache.clear();
 	if (filelist.size() > 0)
 	{
-		filelist[0].getSize();
+		filelist.front()->getSize();
 	}
 	return filelist;
 }
 
-std::vector<uint8_t> ChunkOTF::getDecompressedChunk(int64_t offset, int64_t size, std::ifstream & reader, bool FlagBaseGame, int chunkNum)
+std::vector<uint8_t> ChunkOTF::getDecompressedChunk(int64_t offset, int64_t size, std::ifstream& reader, bool FlagBaseGame, int chunkNum)
 {
 	if (size != 0)
 	{
@@ -200,11 +203,11 @@ std::vector<uint8_t> ChunkOTF::getDecompressedChunk(int64_t offset, int64_t size
 		reader.read(reinterpret_cast<char*>(ChunkCompressed.data()), size);
 
 		std::vector<uint8_t> ChunkDecompressed(0x40000);
-		oo2coreInstance->Decompress(ChunkCompressed.data(), ChunkCompressed.size(), 
+		oo2coreInstance->Decompress(ChunkCompressed.data(), ChunkCompressed.size(),
 			ChunkDecompressed.data(), ChunkDecompressed.size());
 
-		if (!FlagBaseGame) 
-		{ 
+		if (!FlagBaseGame)
+		{
 			Utils::DecryptChunk(ChunkDecompressed, chunkNum);
 		}
 
@@ -215,8 +218,8 @@ std::vector<uint8_t> ChunkOTF::getDecompressedChunk(int64_t offset, int64_t size
 		reader.seekg(offset, std::ios_base::beg);
 		std::vector<uint8_t> ChunkDecompressed(0x40000);
 		reader.read(reinterpret_cast<char*>(ChunkDecompressed.data()), ChunkDecompressed.size());
-		if (!FlagBaseGame) 
-		{ 
+		if (!FlagBaseGame)
+		{
 			Utils::DecryptChunk(ChunkDecompressed, chunkNum);
 		}
 		return ChunkDecompressed;
@@ -275,3 +278,69 @@ std::vector<uint8_t> ChunkOTF::getOnLength(int64_t targetlength, std::vector<uin
 	return tmp;
 }
 
+int ChunkOTF::ExtractSelected(std::list<FileNode*>& itemlist, std::string BaseLocation, bool FlagBaseGame)
+{
+	int failed = 0;
+	for (FileNode* node : itemlist)
+	{
+		if (!node->Childern.empty())
+		{
+			failed += ExtractSelected(node->Childern, BaseLocation, FlagBaseGame);
+		}
+		else if (node->IsSelected())
+		{
+			ChunkOTF* CurNodeChunk = this;
+			CurNodeChunk->cur_index = node->ChunkIndex;
+			CurNodeChunk->cur_pointer = node->ChunkPointer;
+			long size = node->Size;
+			if (CurNodeChunk->ChunkCache.find(CurNodeChunk->cur_index) != CurNodeChunk->ChunkCache.end())
+			{
+				CurNodeChunk->ChunkDecompressed = CurNodeChunk->ChunkCache[CurNodeChunk->cur_index];
+			}
+			else
+			{
+				if (CurNodeChunk->ChunkCache.size() > 20) CurNodeChunk->ChunkCache.clear();
+				CurNodeChunk->ChunkDecompressed =
+					CurNodeChunk->getDecompressedChunk(CurNodeChunk->ChunkOffsetDict[CurNodeChunk->cur_index],
+						CurNodeChunk->MetaChunk[CurNodeChunk->ChunkOffsetDict[CurNodeChunk->cur_index]],
+						CurNodeChunk->Reader,
+						FlagBaseGame,
+						CurNodeChunk->cur_index);
+				CurNodeChunk->ChunkCache.emplace(CurNodeChunk->cur_index, CurNodeChunk->ChunkDecompressed);
+			}
+			if (CurNodeChunk->ChunkCache.find(CurNodeChunk->cur_index + 1) != CurNodeChunk->ChunkCache.end())
+			{
+				CurNodeChunk->NextChunkDecompressed = CurNodeChunk->ChunkCache[CurNodeChunk->cur_index + 1];
+			}
+			else
+			{
+				if (CurNodeChunk->ChunkCache.size() > 20) CurNodeChunk->ChunkCache.clear();
+				if (CurNodeChunk->cur_index + 1 < CurNodeChunk->DictCount)
+				{
+					CurNodeChunk->NextChunkDecompressed =
+						CurNodeChunk->getDecompressedChunk(CurNodeChunk->ChunkOffsetDict[CurNodeChunk->cur_index + 1],
+							CurNodeChunk->MetaChunk[CurNodeChunk->ChunkOffsetDict[CurNodeChunk->cur_index + 1]],
+							CurNodeChunk->Reader,
+							FlagBaseGame,
+							CurNodeChunk->cur_index + 1);
+				}
+				else { CurNodeChunk->NextChunkDecompressed.clear(); }
+				CurNodeChunk->ChunkCache.emplace(CurNodeChunk->cur_index + 1, CurNodeChunk->NextChunkDecompressed);
+			}
+			if (!node->IsFile)
+				fs::create_directories(BaseLocation + node->EntireName + "\\");
+			else
+				fs::create_directories(BaseLocation + node->EntireName);
+			// what does this part mean???
+			if (node->IsFile)
+			{
+				std::cout << "Extracting " << node->EntireName << " ...                          \r";
+				std::ofstream writer(BaseLocation + node->EntireName);
+				std::vector<uint8_t> temp(size);
+				temp = CurNodeChunk->getOnLength(temp.size(), temp, 0, FlagBaseGame);
+				writer.write(reinterpret_cast<char*> (temp.data()), temp.size());
+			}
+		}
+	}
+	return failed;
+}

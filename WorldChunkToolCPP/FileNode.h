@@ -9,7 +9,7 @@ class FileNode
 {
 public:
 	std::string Name;
-	std::list<FileNode> Childern;
+	std::list<FileNode*> Childern;
 	std::string Icon;
 	std::string EntireName;
 	int64_t Offset;
@@ -25,19 +25,7 @@ public:
 	FileNode(const std::string& name, bool isFile, const std::string& fromChunk);
 
 
-	bool IsSelected()
-	{
-		//get { return isSelected; }
-		//set
-		//{
-		//	isSelected = value;
-		//	setChilrenSelected(value);
-		//	if (this.PropertyChanged != null)
-		//	{
-		//		this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("IsSelected"));
-		//	}
-		//}
-	}
+	bool IsSelected();
 
 	int getSelectedCount()
 	{

@@ -22,7 +22,7 @@ FileNode::FileNode(const std::string& name, bool isFile, const std::string& from
 
 bool FileNode::IsSelected()
 {
-	//get { return isSelected; }
+	return isSelected;
 	//set
 	//{
 	//	isSelected = value;
@@ -40,9 +40,9 @@ int64_t FileNode::getSize()
 	else
 	{
 		int64_t _size = 0;
-		for (FileNode& child : Childern)
+		for (FileNode* child : Childern)
 		{
-			_size += child.getSize();
+			_size += child->getSize();
 		}
 		Size = _size;
 		setNameWithSize(Name, Size);

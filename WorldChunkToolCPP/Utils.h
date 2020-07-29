@@ -68,14 +68,14 @@ namespace Utils
 		return false;
 	}
 
-	static bool isFileMagicChunk(const std::string& FileInput, const int checkNumber = MagicChunk)
+	static int getFileMagicNumber(const std::string& FileInput)
 	{
 		std::ifstream Reader(FileInput, std::ios::binary);
 		int MagicInputFile = 0;
 		Reader.read(reinterpret_cast<char*>(&MagicInputFile), sizeof(MagicInputFile));
 		Reader.close();
 
-		return (MagicInputFile == checkNumber);
+		return MagicInputFile;
 	}
 
 
@@ -138,7 +138,13 @@ namespace Utils
 
 	static std::string removeExtension(const std::string& fileInput)
 	{
-		return fs::path(fileInput).replace_extension("").string();
+		return std::filesystem::path(fileInput).replace_extension("").string();
+	}
+
+	static void pause()
+	{
+		std::cout << "Press any key to continue...";
+		std::cin.get();
 	}
 };
 

@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
 	chunkKeyReader.read(reinterpret_cast<char*>(Utils::chunkKeyPattern.data()), Utils::chunkKeyPattern.size());
 
 	std::string FileInput(argv[1]);
-	flags currentFlage{}; // is this some C++17 initialization I have to do for every default constructor?
+	flags currentFlag{}; // is this some C++17 initialization I have to do for every default constructor?
 
 	// collect the command line arguments except the executable name and input directory
 	std::vector<std::string> args;
@@ -58,26 +58,32 @@ int main(int argc, char* argv[])
 		args.emplace_back(argv[i]);
 
 	// Set options
-	setFlag(args,"-AutoConfirm",currentFlage.FlagAutoConfirm,"Auto confirmation turned on.");
-	setFlag(args, "-UnpackAll", currentFlage.FlagUnpackAll, "Unpacking all chunk*.bin files into a single folder.");
-	setFlag(args, "-BuildPKG", currentFlage.FlagBuildPkg, "Building PKG.");
-	setFlag(args, "-BaseGame", currentFlage.FlagBaseGame, "Using legacy mode for MH:W base game chunks.");
+	setFlag(args,"-AutoConfirm",currentFlag.FlagAutoConfirm,"Auto confirmation turned on.");
+	setFlag(args, "-UnpackAll", currentFlag.FlagUnpackAll, "Unpacking all chunk*.bin files into a single folder.");
+	setFlag(args, "-BuildPKG", currentFlag.FlagBuildPkg, "Building PKG.");
+	setFlag(args, "-BaseGame", currentFlag.FlagBaseGame, "Using legacy mode for MH:W base game chunks.");
 
 	// Determine action based on file magic
-	if (currentFlage.FlagUnpackAll && Utils::isDirectory(FileInput))
+	if (currentFlag.FlagUnpackAll && Utils::isDirectory(FileInput))
 	{
-		const std::regex wordRegex = currentFlage.FlagBaseGame ? std::regex("chunk*.bin") : std::regex("chunkG*.bin"); // no wonder it never worked after iceborne
+		const std::regex wordRegex = currentFlag.FlagBaseGame ? std::regex("chunk*.bin") : std::regex("chunkG*.bin"); // no wonder it never worked after iceborne
 		for (const fs::directory_entry& file : fs::directory_iterator(FileInput))
 		{
 			std::string ChunkFile = fs::path(file).filename().string(); // get the file name
 			if (!std::regex_match(ChunkFile, wordRegex)) // if the file name doesn't match the pattern (it's harder than I thought)
 				continue;
 			std::cout << "Processing " << ChunkFile << "." << std::endl;
-			ProcessFile(ChunkFile, currentFlage, &oo2coreInstance);
+			ProcessFile(ChunkFile, currentFlag, &oo2coreInstance);
 		}
 	}
 	else
-		ProcessFile(FileInput, currentFlage, &oo2coreInstance);
+		ProcessFile(FileInput, currentFlag, &oo2coreInstance);
+
+	if (currentFlag.FlagUnpackAll)
+	{
+		std::cout << "Output at: " << fs::current_path().string() << "\\chunk_combined" << std::endl; 
+		Utils::pause();
+	}
 
 	return 0;
 }
@@ -110,7 +116,8 @@ int ProcessFile(const std::string& FileInput, const flags currentFlag, const oo2
 		return 1;
 	}
 
-	if (Utils::isFileMagicChunk(FileInput))
+	int MagicInputFile = Utils::getFileMagicNumber(FileInput);
+	if (MagicInputFile== MagicChunk)
 	{
 		std::cout << "Chunk file detected." << std::endl;
 
@@ -123,12 +130,25 @@ int ProcessFile(const std::string& FileInput, const flags currentFlag, const oo2
 		else
 		{
 			ChunkOTF ChunkOtfInst(oo2coreInstance);
+			std::list<FileNode*> FileCatalog;
+			std::string FilePath = fs::current_path().string() + "\\" + Utils::removeExtension(FileInput);
+			if (currentFlag.FlagUnpackAll)
+			FilePath = fs::current_path().string() + "\\chunk_combined";
+			FileCatalog = ChunkOtfInst.AnalyzeChunk(FileInput, FileCatalog, currentFlag.FlagBaseGame);
+			std::cout << "Extracting chunk file, please wait." << std::endl;
+			ChunkOtfInst.ExtractSelected(FileCatalog, FilePath, currentFlag.FlagBaseGame);
+			Utils::Print("\nFinished.", PRINT_ORDER::AFTER);
+			if (!currentFlag.FlagUnpackAll) { Utils::Print("Output at: " + FilePath, PRINT_ORDER::AFTER); }
+			if (!currentFlag.FlagAutoConfirm) {Utils::pause();}
 		}
+		return 0;
+	}
+	else if (MagicInputFile == MagicPKG)
+	{
+		std::cout << "PKG file detected." << std::endl;
+		PKG.ExtractPKG(FileInput, FlagAutoConfirm, FlagUnpackAll, false);
+		if (!FlagAutoConfirm) { Utils::pause(); }
+		return 0;
 	}
 
-}
-
-bool is_oo2core_8_win64_legit()
-{
-	return true;
 }
