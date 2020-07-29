@@ -1,5 +1,13 @@
 #include "Chunk.h"
 
+#include <fstream>
+#include <filesystem>
+#include <map>
+
+#include "Utils.h"
+
+namespace fs = std::filesystem;
+
 void Chunk::DecompressChunks(const std::string& FileInput, const flags currentFlag)
 {
     std::string NamePKG = fs::path(FileInput).replace_extension(".pkg").string(); // finally something good out of C++17
@@ -13,7 +21,7 @@ void Chunk::DecompressChunks(const std::string& FileInput, const flags currentFl
 
     // Read header
     //Reader.BaseStream.Seek(4, SeekOrigin.Begin);
-    Reader.seekg(4, std::ios_base::beg); // sking the MagicChunk of size int
+    Reader.seekg(4, std::ios_base::beg); // skipping the MagicChunk of size int
     //int ChunkCount = Reader.ReadInt32(); int ChunkPadding = ChunkCount.ToString().Length;
     int ChunkCount;
     Reader.read(reinterpret_cast<char*>(&ChunkCount), sizeof(ChunkCount));

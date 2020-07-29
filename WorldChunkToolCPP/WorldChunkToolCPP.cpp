@@ -6,16 +6,15 @@
 
 #include "oo2core_loader.h"
 #include "Utils.h"
+#include "Chunk.h"
+#include "ChunkOTF.h"
 
 namespace fs = std::filesystem;
-
-static constexpr int MagicChunk = 0x00504D43;
-static constexpr int MagicPKG = 0x20474B50;
 
 int printHelpInfo();
 
 void setFlag(const std::vector<std::string>& args, const std::string& argument, bool& flag, const std::string& printMessage);
-int ProcessFile(const std::string& FileInput, const flags currentFlag);
+int ProcessFile(const std::string& FileInput, const flags currentFlag, const oo2core_loader * oo2coreInstance);
 
 int main(int argc, char* argv[])
 {
@@ -44,6 +43,11 @@ int main(int argc, char* argv[])
 		return 2;
 	}
 
+	// load chunkKeyPattern
+	Utils::chunkKeyPattern = std::vector<uint8_t>(1000009);
+	std::ifstream chunkKeyReader("./keySequence.bin",std::ios::binary);
+	chunkKeyReader.read(reinterpret_cast<char*>(Utils::chunkKeyPattern.data()), Utils::chunkKeyPattern.size());
+
 	std::string FileInput(argv[1]);
 	flags currentFlage{}; // is this some C++17 initialization I have to do for every default constructor?
 
@@ -69,11 +73,11 @@ int main(int argc, char* argv[])
 			if (!std::regex_match(ChunkFile, wordRegex)) // if the file name doesn't match the pattern (it's harder than I thought)
 				continue;
 			std::cout << "Processing " << ChunkFile << "." << std::endl;
-			ProcessFile(ChunkFile, currentFlage);
+			ProcessFile(ChunkFile, currentFlage, &oo2coreInstance);
 		}
 	}
 	else
-		ProcessFile(FileInput, currentFlage);
+		ProcessFile(FileInput, currentFlage, &oo2coreInstance);
 
 	return 0;
 }
@@ -98,7 +102,7 @@ void setFlag(const std::vector<std::string>& args, const std::string& argument, 
 	}
 }
 
-int ProcessFile(const std::string& FileInput, const flags currentFlag)
+int ProcessFile(const std::string& FileInput, const flags currentFlag, const oo2core_loader* oo2coreInstance)
 {
 	if (!fs::exists(FileInput))
 	{
@@ -106,18 +110,19 @@ int ProcessFile(const std::string& FileInput, const flags currentFlag)
 		return 1;
 	}
 
-	std::ifstream Reader(FileInput, std::ios::binary);
-	int MagicInputFile;
-	Reader.read(reinterpret_cast<char*>(&MagicInputFile),sizeof(MagicInputFile));
-	Reader.close();
-	if (MagicInputFile == MagicChunk)
+	if (Utils::isFileMagicChunk(FileInput))
 	{
 		std::cout << "Chunk file detected." << std::endl;
 
 		// Build PKG
 		if (currentFlag.FlagBuildPkg)
 		{
-
+			// TODO
+			Chunk::DecompressChunks(FileInput, currentFlag);
+		}
+		else
+		{
+			ChunkOTF ChunkOtfInst(oo2coreInstance);
 		}
 	}
 

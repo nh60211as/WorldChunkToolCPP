@@ -32,7 +32,7 @@ public:
 		return true;
 	}
 
-	int Decompress(uint8_t* buffer, int size, uint8_t* outputBuffer, int uncompressedSize);
+	int Decompress(uint8_t* buffer, int size, uint8_t* outputBuffer, int uncompressedSize) const;
 
 	// TODO: actually check the file hash of oo2core_8_win64.dll
 	// SHA256: D5440627BBDE1EF2D9730976DD90C5189D874FB7BB808669734E598CDFDBA8D9
