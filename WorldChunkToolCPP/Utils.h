@@ -1,4 +1,5 @@
-#pragma once
+#ifndef UTILS_H
+#define UTILS_H
 
 #include <string>
 #include <iostream>
@@ -51,7 +52,7 @@ namespace Utils
 	}
 
 	// from https://thispointer.com/c-check-if-given-path-is-a-file-or-directory-using-boost-c17-filesystem-library/
-	bool isDirectory(const std::string& filePath)
+	static bool isDirectory(const std::string& filePath)
 	{
 		if (std::filesystem::exists(filePath) && std::filesystem::is_directory(filePath))
 			return true;
@@ -59,3 +60,5 @@ namespace Utils
 		return false;
 	}
 };
+
+#endif

@@ -3,22 +3,17 @@
 #include <filesystem>
 #include <regex>
 #include <fstream>
-#include <Windows.h> // to load dll
 
+#include "oo2core_loader.h"
 #include "Utils.h"
 
 namespace fs = std::filesystem;
 
 static constexpr int MagicChunk = 0x00504D43;
 static constexpr int MagicPKG = 0x20474B50;
-//static constexpr const char* oo2coreFileName = "./oo2core_8_win64.dll";
-#define OO2CORE_FILE_NAME "./oo2core_8_win64.dll"
-// STOP SUGGESTING ME TO CONVERT IT THE CONSTEXPR WHEN YOUR STUPID TEXT MACRO DOESN'T EXPAND TO THE ACTUAL EXPRESSION
 
 int printHelpInfo();
-// TODO: actually check the file hash of oo2core_8_win64.dll
-// SHA256: D5440627BBDE1EF2D9730976DD90C5189D874FB7BB808669734E598CDFDBA8D9
-bool is_oo2core_8_win64_legit();
+
 void setFlag(const std::vector<std::string>& args, const std::string& argument, bool& flag, const std::string& printMessage);
 int ProcessFile(const std::string& FileInput, const flags currentFlag);
 
@@ -32,23 +27,22 @@ int main(int argc, char* argv[])
 		return printHelpInfo();
 
 	// load oo2core_8_win64.dll
-	if (!is_oo2core_8_win64_legit())
-	{
-		std::cout << OO2CORE_FILE_NAME << " is not legit." << std::endl;
-		std::cout << "Download the file from Warframe or something." << std::endl;
-		std::cout << "You can also check the hash of " << OO2CORE_FILE_NAME << ": " << std::endl;
-		std::cout << "SHA256: D5440627BBDE1EF2D9730976DD90C5189D874FB7BB808669734E598CDFDBA8D9" << std::endl;
-		return 2;
-	}
-
-	HINSTANCE hGetProcIDDLL = LoadLibrary(TEXT(OO2CORE_FILE_NAME));
-	if (hGetProcIDDLL == nullptr)
+	oo2core_loader oo2coreInstance;
+	if (!oo2coreInstance) // if the library is not loaded
 	{
 		std::cout << OO2CORE_FILE_NAME << " not found." << std::endl;
 		std::cout << "Place it at the same folder as WorldChunkTool.exe." << std::endl;
 		return 2;
 	}
 
+	if(!oo2coreInstance.is_oo2core_8_win64_legit())
+	{
+		std::cout << OO2CORE_FILE_NAME << " is not legit." << std::endl;
+		std::cout << "Download the file from Warframe or something." << std::endl;
+		std::cout << "You can also check the hash of " << OO2CORE_FILE_NAME << ": " << std::endl;
+		std::cout << "SHA256: " << oo2coreSHA256 << std::endl;
+		return 2;
+	}
 
 	std::string FileInput(argv[1]);
 	flags currentFlage{}; // is this some C++17 initialization I have to do for every default constructor?
@@ -60,6 +54,12 @@ int main(int argc, char* argv[])
 		args.emplace_back(argv[i]);
 
 	// Set options
+	setFlag(args,"-AutoConfirm",currentFlage.FlagAutoConfirm,"Auto confirmation turned on.");
+	setFlag(args, "-UnpackAll", currentFlage.FlagUnpackAll, "Unpacking all chunk*.bin files into a single folder.");
+	setFlag(args, "-BuildPKG", currentFlage.FlagBuildPkg, "Building PKG.");
+	setFlag(args, "-BaseGame", currentFlage.FlagBaseGame, "Using legacy mode for MH:W base game chunks.");
+
+	// Determine action based on file magic
 	if (currentFlage.FlagUnpackAll && Utils::isDirectory(FileInput))
 	{
 		const std::regex wordRegex = currentFlage.FlagBaseGame ? std::regex("chunk*.bin") : std::regex("chunkG*.bin"); // no wonder it never worked after iceborne
