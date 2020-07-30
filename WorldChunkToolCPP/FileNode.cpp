@@ -1,6 +1,10 @@
 #include "FileNode.h"
 
+#include <filesystem>
+
 #include "Utils.h"
+
+namespace fs = std::filesystem;
 
 FileNode::FileNode()
 {
@@ -12,9 +16,9 @@ FileNode::FileNode(const std::string& name, bool isFile, const std::string& from
 	Name = name;
 	NameWithSize = "";
 	IsFile = isFile;
-	if (isFile) Icon = AppDomain.CurrentDomain.BaseDirectory + "\\file.png";
-	else Icon = AppDomain.CurrentDomain.BaseDirectory + "\\dir.png";
-	Childern = std::list<std::unique_ptr<FileNode>>();
+	if (isFile) Icon = fs::current_path().root_directory().string() + "\\file.png";
+	else Icon = fs::current_path().root_directory().string() + "\\dir.png";
+	Childern = std::list<std::shared_ptr<FileNode>>();
 	setIsSelected(true);
 	FromChunk = fromChunk;
 	FromChunkName = Utils::removeExtension(fromChunk);
@@ -42,7 +46,7 @@ int FileNode::getSelectedCount()
 	{
 		count += node->getSelectedCount();
 	}
-	if (IsFile && IsSelected)
+	if (IsFile && IsSelected())
 	{
 		count++;
 	}

@@ -1,14 +1,15 @@
 #include "ChunkOTF.h"
 
 #include <filesystem>
+#include <cmath>
 
 #include "Utils.h"
 
 namespace fs = std::filesystem;
 
-ChunkOTF::ChunkOTF(const oo2core_loader* oo2coreInstance_)
+ChunkOTF::ChunkOTF(std::shared_ptr<oo2core_loader> oo2coreInstance_):
+	oo2coreInstance(oo2coreInstance_)
 {
-	this->oo2coreInstance = oo2coreInstance_;
 }
 
 std::list<std::shared_ptr<FileNode>> ChunkOTF::AnalyzeChunk(const std::string& FileInput, std::list<std::shared_ptr<FileNode>> & inputFileList, bool FlagBaseGame)
@@ -32,7 +33,7 @@ std::list<std::shared_ptr<FileNode>> ChunkOTF::AnalyzeChunk(const std::string& F
 
 	double DiskSpace = (int64_t)ChunkCount * (int64_t)0x40000 * 1e-9;
 	// TODO: actually parse the string
-	Utils::Print("{ChunkCount} subchunks detected. Requires at least: {Math.Round(DiskSpace, 2)} GB.", PRINT_ORDER::AFTER);
+	Utils::Print(std::to_string(ChunkCount) + " subchunks detected. Requires at least: " + std::to_string(std::round(DiskSpace*100)/100) + " GB.", PRINT_ORDER::AFTER);
 
 	// Read file list
 	DictCount = 0;
@@ -143,15 +144,15 @@ std::list<std::shared_ptr<FileNode>> ChunkOTF::AnalyzeChunk(const std::string& F
 			std::vector<std::string> fathernodes = Utils::stringSplit(StringNameChild, "\\");
 			bool isFile = false;
 			if (EntryType == 0x02 || EntryType == 0x00) isFile = true;
-			FileNode child_node(fathernodes.back(), isFile, FileInput);
+			std::shared_ptr<FileNode> child_node = std::make_shared<FileNode>(fathernodes.back(), isFile, FileInput);
 			if (isFile)
 			{
-				child_node.Size = FileSize;
-				child_node.Offset = FileOffset;
-				child_node.ChunkIndex = (int)(FileOffset / 0x40000);
-				child_node.ChunkPointer = (int)(FileOffset % 0x40000);
+				child_node->Size = FileSize;
+				child_node->Offset = FileOffset;
+				child_node->ChunkIndex = (int)(FileOffset / 0x40000);
+				child_node->ChunkPointer = (int)(FileOffset % 0x40000);
 			}
-			child_node.EntireName = StringNameChild;
+			child_node->EntireName = StringNameChild;
 			std::shared_ptr<FileNode> target_node = root_node;
 			for (std::string node_name : fathernodes)
 			{
@@ -160,7 +161,7 @@ std::list<std::shared_ptr<FileNode>> ChunkOTF::AnalyzeChunk(const std::string& F
 				{
 					if (node->Name == node_name)
 					{
-						if (node->Name == child_node.Name) { break; }
+						if (node->Name == child_node->Name) { break; }
 						target_node = node;
 						break;
 					}
@@ -169,13 +170,13 @@ std::list<std::shared_ptr<FileNode>> ChunkOTF::AnalyzeChunk(const std::string& F
 			bool need_add = true;
 			for (const std::shared_ptr<FileNode>& tmp_node : target_node->Childern)
 			{
-				if (tmp_node->Name == child_node.Name)
+				if (tmp_node->Name == child_node->Name)
 				{
-					if (child_node.IsFile) target_node->Childern.remove(tmp_node);
+					if (child_node->IsFile) target_node->Childern.remove(tmp_node);
 					else
 					{
-						tmp_node->FromChunk = child_node.FromChunk;
-						tmp_node->FromChunkName = child_node.FromChunkName;
+						tmp_node->FromChunk = child_node->FromChunk;
+						tmp_node->FromChunkName = child_node->FromChunkName;
 						need_add = false;
 					}
 					break;

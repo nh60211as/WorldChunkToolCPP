@@ -13,11 +13,11 @@
 class ChunkOTF
 {
 public:
-	ChunkOTF(const oo2core_loader* oo2coreInstance_);
+	ChunkOTF(std::shared_ptr<oo2core_loader> oo2coreInstance_);
 	std::list<std::shared_ptr<FileNode>> AnalyzeChunk(const std::string& FileInput, std::list<std::shared_ptr<FileNode>> & inputFileList, bool FlagBaseGame);
     int ExtractSelected(std::list<std::shared_ptr<FileNode>> & itemlist, std::string BaseLocation, bool FlagBaseGame);
 private:
-	const oo2core_loader* oo2coreInstance;
+	const std::shared_ptr<oo2core_loader> oo2coreInstance;
 	std::map<int64_t, int64_t> MetaChunk;
 	std::map<int, int64_t> ChunkOffsetDict;
 	std::ifstream Reader;

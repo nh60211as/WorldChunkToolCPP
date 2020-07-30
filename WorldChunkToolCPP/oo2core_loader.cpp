@@ -15,7 +15,7 @@ oo2core_loader::~oo2core_loader()
         FreeLibrary(libraryInstance);
 }
 
-int oo2core_loader::Decompress(uint8_t* buffer, int size, uint8_t* outputBuffer, int uncompressedSize)
+int oo2core_loader::Decompress(uint8_t* buffer, int size, uint8_t* outputBuffer, int uncompressedSize) const
 {
     return g_OodleDecompressFunc(buffer, size, outputBuffer, uncompressedSize, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3);
 }

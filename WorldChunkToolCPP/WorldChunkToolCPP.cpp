@@ -15,7 +15,7 @@ namespace fs = std::filesystem;
 int printHelpInfo();
 
 void setFlag(const std::vector<std::string>& args, const std::string& argument, bool& flag, const std::string& printMessage);
-int ProcessFile(const std::string& FileInput, const flags currentFlag, const oo2core_loader* oo2coreInstance);
+int ProcessFile(const std::string& FileInput, const flags currentFlag, const std::shared_ptr<oo2core_loader> & oo2coreInstance);
 
 int main(int argc, char* argv[])
 {
@@ -33,7 +33,7 @@ int main(int argc, char* argv[])
 		return printHelpInfo();
 
 	// load oo2core_8_win64.dll
-	oo2core_loader oo2coreInstance;
+	std::shared_ptr<oo2core_loader> oo2coreInstance = std::make_shared<oo2core_loader>();
 	if (!oo2coreInstance) // if the library is not loaded
 	{
 		std::cout << OO2CORE_FILE_NAME << " not found." << std::endl;
@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
 		return 2;
 	}
 
-	if (!oo2coreInstance.is_oo2core_8_win64_legit())
+	if (!oo2coreInstance->is_oo2core_8_win64_legit())
 	{
 		std::cout << OO2CORE_FILE_NAME << " is not legit." << std::endl;
 		std::cout << "Download the file from Warframe or something." << std::endl;
@@ -80,11 +80,11 @@ int main(int argc, char* argv[])
 			if (!std::regex_match(ChunkFile, wordRegex)) // if the file name doesn't match the pattern (it's harder than I thought)
 				continue;
 			std::cout << "Processing " << ChunkFile << "." << std::endl;
-			ProcessFile(ChunkFile, currentFlag, &oo2coreInstance);
+			ProcessFile(ChunkFile, currentFlag, oo2coreInstance);
 		}
 	}
 	else
-		ProcessFile(FileInput, currentFlag, &oo2coreInstance);
+		ProcessFile(FileInput, currentFlag, oo2coreInstance);
 
 	if (currentFlag.FlagUnpackAll)
 	{
@@ -115,7 +115,7 @@ void setFlag(const std::vector<std::string>& args, const std::string& argument, 
 	}
 }
 
-int ProcessFile(const std::string& FileInput, const flags currentFlag, const oo2core_loader* oo2coreInstance)
+int ProcessFile(const std::string& FileInput, const flags currentFlag, const std::shared_ptr<oo2core_loader> & oo2coreInstance)
 {
 	if (!fs::exists(FileInput))
 	{
@@ -137,7 +137,7 @@ int ProcessFile(const std::string& FileInput, const flags currentFlag, const oo2
 		else
 		{
 			ChunkOTF ChunkOtfInst(oo2coreInstance);
-			std::list<FileNode*> FileCatalog;
+			std::list<std::shared_ptr<FileNode>> FileCatalog;
 			std::string FilePath = fs::current_path().string() + "\\" + Utils::removeExtension(FileInput);
 			if (currentFlag.FlagUnpackAll)
 				FilePath = fs::current_path().string() + "\\chunk_combined";
@@ -153,9 +153,17 @@ int ProcessFile(const std::string& FileInput, const flags currentFlag, const oo2
 	else if (MagicInputFile == MagicPKG)
 	{
 		std::cout << "PKG file detected." << std::endl;
-		PKG.ExtractPKG(FileInput, FlagAutoConfirm, FlagUnpackAll, false);
-		if (!FlagAutoConfirm) { Utils::pause(); }
+		// TODO:
+		//PKG.ExtractPKG(FileInput, FlagAutoConfirm, FlagUnpackAll, false);
+		if (!currentFlag.FlagAutoConfirm) { Utils::pause(); }
+		return 0;
+	}
+	else
+	{
+		std::cout << "ERROR: Invalid magic " << std::hex << MagicInputFile << "." << std::endl;
+		if (!currentFlag.FlagAutoConfirm) { Utils::pause(); }
 		return 0;
 	}
 
+	return 0;
 }

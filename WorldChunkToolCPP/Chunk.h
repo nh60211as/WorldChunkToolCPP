@@ -3,6 +3,8 @@
 
 #include <string>
 
+#include "Utils.h"
+
 class Chunk
 {
 public:
