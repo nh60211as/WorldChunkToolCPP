@@ -4,15 +4,15 @@
 // reference: https://en.uesp.net/wiki/ESOMod:DAT_File_Format
 #include <Windows.h>
 #include <cstdint>
+#include <vector>
 
 //static constexpr const char* oo2coreFileName = "./oo2core_8_win64.dll";
 #define OO2CORE_FILE_NAME "./oo2core_8_win64.dll"
 // STOP SUGGESTING ME TO CONVERT IT TO CONSTEXPR WHEN YOUR STUPID TEXT MACRO DOESN'T EXPAND TO THE ACTUAL EXPRESSION
 static constexpr const char* oo2coreSHA256 = "D5440627BBDE1EF2D9730976DD90C5189D874FB7BB808669734E598CDFDBA8D9";
 
-typedef int __stdcall OodleLZ_Compress_Func(uint32_t fmt, uint8_t* buffer, int bufferSize, uint8_t* outputBuffer, int level, void* unused1, void* unused2, void* unused3);
-typedef int __stdcall OodleLZ_Decompress_Func(byte* buffer, int bufferSize, uint8_t* outputBuffer, int outputBufferSize, int a, int b, int c, void* d, void* e, void* f, void* g, void* h, void* i, int threadModule);
-
+typedef int __stdcall OodleLZ_Compress_Func(uint32_t fmt, byte* buffer, int bufferSize, byte* outputBuffer, int level, void* unused1, void* unused2, void* unused3);
+typedef int __stdcall OodleLZ_Decompress_Func(byte* buffer, int bufferSize, byte* outputBuffer, int outputBufferSize, int a, int b, int c, void* d, void* e, void* f, void* g, void* h, void* i, int threadModule);
 class oo2core_loader
 {
 public:
@@ -32,7 +32,7 @@ public:
 		return true;
 	}
 
-	int Decompress(uint8_t* buffer, int size, uint8_t* outputBuffer, int uncompressedSize) const;
+	std::vector<uint8_t> Decompress(std::vector<uint8_t>& buffer, int size, int uncompressedSize) const;
 
 	// TODO: actually check the file hash of oo2core_8_win64.dll
 	// SHA256: D5440627BBDE1EF2D9730976DD90C5189D874FB7BB808669734E598CDFDBA8D9

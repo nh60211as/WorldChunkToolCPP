@@ -16,12 +16,21 @@ FileNode::FileNode(const std::string& name, bool isFile, const std::string& from
 	Name = name;
 	NameWithSize = "";
 	IsFile = isFile;
-	if (isFile) Icon = fs::current_path().root_directory().string() + "\\file.png";
-	else Icon = fs::current_path().root_directory().string() + "\\dir.png";
+	if (isFile) Icon = fs::current_path().string() + "\\file.png";
+	else Icon = fs::current_path().string() + "\\dir.png";
 	Childern = std::list<std::shared_ptr<FileNode>>();
 	setIsSelected(true);
 	FromChunk = fromChunk;
-	FromChunkName = Utils::removeExtension(fromChunk);
+	FromChunkName = Utils::getFileNameWithoutExtension(fromChunk);
+
+	// other not initialized variable
+	Childern = std::list<std::shared_ptr<FileNode>>();
+	EntireName = std::string();
+	Offset = 0;
+	Size = 0;
+	ChunkIndex = 0;
+	ChunkPointer = 0;
+	NameWithSize = std::string();
 }
 
 bool FileNode::IsSelected()

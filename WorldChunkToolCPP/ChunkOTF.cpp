@@ -2,13 +2,15 @@
 
 #include <filesystem>
 #include <cmath>
+#include <array>
 
 #include "Utils.h"
 
 namespace fs = std::filesystem;
 
 ChunkOTF::ChunkOTF(std::shared_ptr<oo2core_loader> oo2coreInstance_):
-	oo2coreInstance(oo2coreInstance_)
+	oo2coreInstance(oo2coreInstance_),
+	chunkDecrypter()
 {
 }
 
@@ -22,7 +24,7 @@ std::list<std::shared_ptr<FileNode>> ChunkOTF::AnalyzeChunk(const std::string& F
 	MetaChunk = std::map<int64_t, int64_t>();
 	ChunkOffsetDict = std::map<int, int64_t>();
 	std::string NamePKG = fs::path(FileInput).replace_extension(".pkg").string(); // finally something good out of C++17
-	Reader = std::ifstream(FileInput, std::ios::in);
+	Reader = std::ifstream(FileInput, std::ios::in | std::ios::binary); // ios::in must be added or it will read wrong result like how???
 
 	// Read header
 	Reader.seekg(4, std::ios_base::beg); // skipping the MagicChunk of size int
@@ -38,41 +40,37 @@ std::list<std::shared_ptr<FileNode>> ChunkOTF::AnalyzeChunk(const std::string& F
 	// Read file list
 	DictCount = 0;
 	int64_t totalChunkSize = 0;
+	std::array<uint8_t, 8> ArrayChunkSize = {1,1,1,0,0,0,0,0}; // zero initialize the array. Is there a better way?
+	std::array<uint8_t, 8> ArrayChunkOffset = {1,1,1,1,1,0,0,0}; // the ones are just a note to me that they will be modified
 	for (int i = 0; i < ChunkCount; i++)
 	{
 		// Process file size
-		uint8_t ArrayTmp1[8];
 		//byte[] ArrayChunkSize = Reader.ReadBytes(3);
-		uint8_t ArrayChunkSize[3];
-		Reader.read(reinterpret_cast<char*>(&ArrayChunkSize), sizeof(ArrayChunkSize));
+		Reader.read(reinterpret_cast<char*>(ArrayChunkSize.data()), 3); // read 3 bytes
 
 		//int Low = ArrayChunkSize[0] & 0x0F;
 
 		//int High = ArrayChunkSize[0] >> 4;
 		//ArrayChunkSize[0] = BitConverter.GetBytes(High)[0];
-		ArrayChunkSize[0] = *(uint8_t*)(ArrayChunkSize[0] >> 4); // does the endianess need a check
+		ArrayChunkSize[0] = (ArrayChunkSize[0] >> 4);
 		//Array.Copy(ArrayChunkSize, ArrayTmp1, ArrayChunkSize.Length);
-		std::copy(std::begin(ArrayChunkSize), std::end(ArrayChunkSize), std::begin(ArrayTmp1));
 		//long ChunkSize = BitConverter.ToInt64(ArrayTmp1, 0); // why are C# examples so over-engineered
-		int64_t ChunkSize = *(int64_t*)(ArrayTmp1[0]);
+		int64_t ChunkSize = *(int64_t*)(ArrayChunkSize.data()); // type punning. I only know it probably works on GCC.
 		ChunkSize = (ChunkSize >> 4) + (ChunkSize & 0xF);
 		totalChunkSize += ChunkSize;
 
 		// Process offset
-		uint8_t ArrayTmp2[8];
 		//byte[] ArrayChunkOffset = Reader.ReadBytes(5);
-		uint8_t ArrayChunkOffset[5];
-		Reader.read(reinterpret_cast<char*>(&ArrayChunkOffset), sizeof(ArrayChunkOffset));
+		Reader.read(reinterpret_cast<char*>(ArrayChunkOffset.data()), 5); // read 5 bytes
 		//Array.Copy(ArrayChunkOffset, ArrayTmp2, ArrayChunkOffset.Length);
-		std::copy(std::begin(ArrayChunkOffset), std::end(ArrayChunkOffset), std::begin(ArrayTmp2));
 		//long ChunkOffset = BitConverter.ToInt64(ArrayTmp2, 0);
-		int64_t ChunkOffset = *(int64_t*)(ArrayTmp2[0]);
+		int64_t ChunkOffset = *(int64_t*)(ArrayChunkOffset.data());
 
 		MetaChunk.emplace(ChunkOffset, ChunkSize);
-
-		DictCount = i + 1;
+		ChunkOffsetDict.emplace(i, ChunkOffset);
+		//DictCount = i + 1; // why does it need to be updated every loop
 	}
-
+	DictCount = ChunkCount;
 	cur_index = 0;
 	int64_t cur_offset = ChunkOffsetDict[cur_index];
 	int64_t cur_size = MetaChunk[cur_offset];
@@ -94,6 +92,8 @@ std::list<std::shared_ptr<FileNode>> ChunkOTF::AnalyzeChunk(const std::string& F
 	std::shared_ptr<FileNode> root_node = nullptr;
 	for (int i = 0; i < TotalParentCount; i++)
 	{
+		//std::cout << i << ": " << std::endl;
+
 		std::string StringNameParent = getName(0x3C, FlagBaseGame);
 		int64_t FileSize = getInt64(FlagBaseGame);
 		long FileOffset = getInt64(FlagBaseGame);
@@ -110,15 +110,18 @@ std::list<std::shared_ptr<FileNode>> ChunkOTF::AnalyzeChunk(const std::string& F
 		{
 			root_node = filelist.front();
 			root_node->FromChunk = fileinput;
-			root_node->FromChunkName = fs::path(FileInput).replace_extension("").string(); // atcually removed the extension
+			root_node->FromChunkName = Utils::getFileNameWithoutExtension(FileInput);
 		}
+		//std::cout << root_node->EntireName << std::endl;
 
 		for (int j = 0; j < CountChildren; j++)
 		{
+			//std::cout << "j: " << j << std::endl;
+
 			int origin_pointer = cur_pointer;
 			int origin_loc = cur_index;
-			if (ChunkCache.count(cur_index) == 0) ChunkCache.emplace(cur_index, ChunkDecompressed);
-			if (ChunkCache.count(cur_index + 1) == 0) ChunkCache.emplace(cur_index + 1, NextChunkDecompressed);
+			if (ChunkCache.find(cur_index) == ChunkCache.end()) ChunkCache.emplace(cur_index, ChunkDecompressed);
+			if (ChunkCache.find(cur_index + 1) == ChunkCache.end()) ChunkCache.emplace(cur_index + 1, NextChunkDecompressed);
 
 			std::string StringNameChild = getName(0xA0, FlagBaseGame);
 			FileSize = getInt64(FlagBaseGame);
@@ -141,7 +144,9 @@ std::list<std::shared_ptr<FileNode>> ChunkOTF::AnalyzeChunk(const std::string& F
 				std::vector<uint8_t> temp(0x68);
 				getOnLength(temp.size(), temp, 0, FlagBaseGame);
 			}
-			std::vector<std::string> fathernodes = Utils::stringSplit(StringNameChild, "\\");
+			// https://stackoverflow.com/questions/4025482/cant-escape-the-backslash-with-regex
+			// split by regular expression. "\\\\" will be interpreted as "\\"
+			std::vector<std::string> fathernodes = Utils::stringSplit(StringNameChild, "\\\\"); 
 			bool isFile = false;
 			if (EntryType == 0x02 || EntryType == 0x00) isFile = true;
 			std::shared_ptr<FileNode> child_node = std::make_shared<FileNode>(fathernodes.back(), isFile, FileInput);
@@ -154,12 +159,16 @@ std::list<std::shared_ptr<FileNode>> ChunkOTF::AnalyzeChunk(const std::string& F
 			}
 			child_node->EntireName = StringNameChild;
 			std::shared_ptr<FileNode> target_node = root_node;
-			for (std::string node_name : fathernodes)
+			//std::cout << j << ": " << target_node->EntireName << std::endl;
+			for (const std::string & node_name : fathernodes)
 			{
 				if (node_name.empty()) continue;
 				for (const std::shared_ptr<FileNode> & node : target_node->Childern)
 				{
-					if (node->Name == node_name)
+					//std::cout << node->Name.size() << "==" << node_name.size() << std::endl;
+					//std::cout << node->Name << "==" << node_name << std::endl;
+					//std::cout << (node->Name.compare(node_name) == 0) << std::endl;
+					if (node->Name.compare(node_name)==0)
 					{
 						if (node->Name == child_node->Name) { break; }
 						target_node = node;
@@ -167,12 +176,18 @@ std::list<std::shared_ptr<FileNode>> ChunkOTF::AnalyzeChunk(const std::string& F
 					}
 				}
 			}
+			//std::cout << j << ": " << target_node->EntireName << std::endl;
 			bool need_add = true;
 			for (const std::shared_ptr<FileNode>& tmp_node : target_node->Childern)
 			{
 				if (tmp_node->Name == child_node->Name)
 				{
-					if (child_node->IsFile) target_node->Childern.remove(tmp_node);
+					if (child_node->IsFile)
+					{
+						//std::cout << target_node->Childern.size() << std::endl;
+						target_node->Childern.remove(tmp_node);
+						//std::cout << target_node->Childern.size() << std::endl;
+					}
 					else
 					{
 						tmp_node->FromChunk = child_node->FromChunk;
@@ -186,6 +201,7 @@ std::list<std::shared_ptr<FileNode>> ChunkOTF::AnalyzeChunk(const std::string& F
 				target_node->Childern.emplace_back(child_node);
 		}
 	}
+	// the debug build extremely slow
 	ChunkCache.clear();
 	if (filelist.size() > 0)
 	{
@@ -203,13 +219,11 @@ std::vector<uint8_t> ChunkOTF::getDecompressedChunk(int64_t offset, int64_t size
 		std::vector<uint8_t> ChunkCompressed(size);
 		reader.read(reinterpret_cast<char*>(ChunkCompressed.data()), size);
 
-		std::vector<uint8_t> ChunkDecompressed(0x40000);
-		oo2coreInstance->Decompress(ChunkCompressed.data(), ChunkCompressed.size(),
-			ChunkDecompressed.data(), ChunkDecompressed.size());
+		std::vector<uint8_t> ChunkDecompressed = oo2coreInstance->Decompress(ChunkCompressed, ChunkCompressed.size(), 0x40000);
 
 		if (!FlagBaseGame)
 		{
-			Utils::DecryptChunk(ChunkDecompressed, chunkNum);
+			chunkDecrypter.DecryptChunk(ChunkDecompressed, chunkNum);
 		}
 
 		return ChunkDecompressed;
@@ -221,7 +235,7 @@ std::vector<uint8_t> ChunkOTF::getDecompressedChunk(int64_t offset, int64_t size
 		reader.read(reinterpret_cast<char*>(ChunkDecompressed.data()), ChunkDecompressed.size());
 		if (!FlagBaseGame)
 		{
-			Utils::DecryptChunk(ChunkDecompressed, chunkNum);
+			chunkDecrypter.DecryptChunk(ChunkDecompressed, chunkNum);
 		}
 		return ChunkDecompressed;
 	}
@@ -232,9 +246,13 @@ std::string ChunkOTF::getName(int targetlength, bool FlagBaseGame)
 	std::vector<uint8_t> tmp(targetlength);
 	getOnLength(targetlength, tmp, 0, FlagBaseGame);
 
+	// find the index of value 0
+	std::vector<uint8_t>::iterator stringEnd = std::find(tmp.begin(), tmp.end(), 0);
+
 	std::string ans;
-	ans.reserve(tmp.size());
-	ans.append(std::begin(tmp), std::end(tmp));
+	ans.reserve(std::distance(std::begin(tmp), stringEnd));
+	ans.append(std::begin(tmp), stringEnd);
+	ans.shrink_to_fit();
 	return ans;
 }
 

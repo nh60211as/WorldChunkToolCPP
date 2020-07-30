@@ -8,6 +8,7 @@
 
 #include "FileNode.h"
 #include "oo2core_loader.h"
+#include "ChunkDecrypter.h"
 
 // on the fly chunk processor
 class ChunkOTF
@@ -28,6 +29,9 @@ private:
 	int DictCount;
 	std::string fileinput;
 	std::map<int, std::vector<uint8_t>> ChunkCache;
+
+	// 
+	ChunkDecrypter chunkDecrypter;
 
 	std::vector<uint8_t> getDecompressedChunk(int64_t offset, int64_t size, std::ifstream& reader, bool FlagBaseGame, int chunkNum);
 	//To read an ASCII string from chunk bytes

@@ -145,6 +145,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Chunk.cpp" />
+    <ClCompile Include="ChunkDecrypter.cpp" />
     <ClCompile Include="ChunkOTF.cpp" />
     <ClCompile Include="FileNode.cpp" />
     <ClCompile Include="oo2core_loader.cpp" />
@@ -152,6 +153,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Chunk.h" />
+    <ClInclude Include="ChunkDecrypter.h" />
     <ClInclude Include="ChunkOTF.h" />
     <ClInclude Include="FileNode.h" />
     <ClInclude Include="oo2core_loader.h" />

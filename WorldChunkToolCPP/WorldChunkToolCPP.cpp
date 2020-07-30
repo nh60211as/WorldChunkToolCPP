@@ -20,7 +20,7 @@ int ProcessFile(const std::string& FileInput, const flags currentFlag, const std
 int main(int argc, char* argv[])
 {
 	std::cout << "==============================" << std::endl;
-	Utils::Print("WorldChunkTool v1.2.2 by MHVuze", PRINT_ORDER::BEFORE);
+	Utils::Print("WorldChunkTool v1.2.2 by MHVuze", PRINT_ORDER::AFTER);
 	Utils::Print("C++ implementation by nh60211as", PRINT_ORDER::AFTER);
 
 	if (Utils::IsBigEndian())
@@ -50,10 +50,7 @@ int main(int argc, char* argv[])
 		return 2;
 	}
 
-	// load chunkKeyPattern
-	Utils::chunkKeyPattern = std::vector<uint8_t>(1000009);
-	std::ifstream chunkKeyReader("./keySequence.bin", std::ios::binary);
-	chunkKeyReader.read(reinterpret_cast<char*>(Utils::chunkKeyPattern.data()), Utils::chunkKeyPattern.size());
+
 
 	std::string FileInput(argv[1]);
 	flags currentFlag{}; // is this some C++17 initialization I have to do for every default constructor?
