@@ -11,13 +11,13 @@ ChunkOTF::ChunkOTF(const oo2core_loader* oo2coreInstance_)
 	this->oo2coreInstance = oo2coreInstance_;
 }
 
-std::list<FileNode*> ChunkOTF::AnalyzeChunk(const std::string& FileInput, std::list<FileNode*>& inputFileList, bool FlagBaseGame)
+std::list<std::shared_ptr<FileNode>> ChunkOTF::AnalyzeChunk(const std::string& FileInput, std::list<std::shared_ptr<FileNode>> & inputFileList, bool FlagBaseGame)
 {
 	fileinput = FileInput; // store the file input
 
 	ChunkCache = std::map<int, std::vector<uint8_t>>();
 
-	std::list<FileNode*> filelist = inputFileList;
+	std::list<std::shared_ptr<FileNode>> filelist = inputFileList;
 	MetaChunk = std::map<int64_t, int64_t>();
 	ChunkOffsetDict = std::map<int, int64_t>();
 	std::string NamePKG = fs::path(FileInput).replace_extension(".pkg").string(); // finally something good out of C++17
@@ -90,7 +90,7 @@ std::list<FileNode*> ChunkOTF::AnalyzeChunk(const std::string& FileInput, std::l
 	cur_pointer += 4;
 	int TotalChildrenCount = *(int*)(ChunkDecompressed.data() + cur_pointer);
 	cur_pointer = 0x100;
-	FileNode* root_node = nullptr;
+	std::shared_ptr<FileNode> root_node = nullptr;
 	for (int i = 0; i < TotalParentCount; i++)
 	{
 		std::string StringNameParent = getName(0x3C, FlagBaseGame);
@@ -101,7 +101,7 @@ std::list<FileNode*> ChunkOTF::AnalyzeChunk(const std::string& FileInput, std::l
 
 		if (filelist.size() == 0)
 		{
-			root_node = new FileNode(StringNameParent, false, FileInput);
+			root_node = std::make_shared<FileNode>(StringNameParent, false, FileInput);
 			root_node->EntireName = root_node->Name;
 			filelist.emplace_back(root_node);
 		}
@@ -152,11 +152,11 @@ std::list<FileNode*> ChunkOTF::AnalyzeChunk(const std::string& FileInput, std::l
 				child_node.ChunkPointer = (int)(FileOffset % 0x40000);
 			}
 			child_node.EntireName = StringNameChild;
-			FileNode* target_node = root_node;
+			std::shared_ptr<FileNode> target_node = root_node;
 			for (std::string node_name : fathernodes)
 			{
 				if (node_name.empty()) continue;
-				for (FileNode* node : target_node->Childern)
+				for (const std::shared_ptr<FileNode> & node : target_node->Childern)
 				{
 					if (node->Name == node_name)
 					{
@@ -167,7 +167,7 @@ std::list<FileNode*> ChunkOTF::AnalyzeChunk(const std::string& FileInput, std::l
 				}
 			}
 			bool need_add = true;
-			for (FileNode* tmp_node : target_node->Childern)
+			for (const std::shared_ptr<FileNode>& tmp_node : target_node->Childern)
 			{
 				if (tmp_node->Name == child_node.Name)
 				{
@@ -278,10 +278,10 @@ std::vector<uint8_t> ChunkOTF::getOnLength(int64_t targetlength, std::vector<uin
 	return tmp;
 }
 
-int ChunkOTF::ExtractSelected(std::list<FileNode*>& itemlist, std::string BaseLocation, bool FlagBaseGame)
+int ChunkOTF::ExtractSelected(std::list<std::shared_ptr<FileNode>>& itemlist, std::string BaseLocation, bool FlagBaseGame)
 {
 	int failed = 0;
-	for (FileNode* node : itemlist)
+	for (const std::shared_ptr<FileNode>& node : itemlist)
 	{
 		if (!node->Childern.empty())
 		{

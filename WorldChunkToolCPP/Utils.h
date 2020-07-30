@@ -37,6 +37,12 @@ namespace Utils
 {
 	static std::vector<uint8_t> chunkKeyPattern; // it should be initialized in main()
 
+	static int IsBigEndian()
+	{
+		int i = 1;
+		return !*((char*)&i);
+	}
+
 	static void Print(const std::string& Input, PRINT_ORDER order)
 	{
 		if (order == PRINT_ORDER::AFTER)

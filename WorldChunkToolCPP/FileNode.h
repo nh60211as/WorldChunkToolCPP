@@ -4,12 +4,13 @@
 #include <string>
 #include <vector>
 #include <list>
+#include <memory>
 
 class FileNode
 {
 public:
 	std::string Name;
-	std::list<FileNode*> Childern;
+	std::list<std::shared_ptr<FileNode>> Childern;
 	std::string Icon;
 	std::string EntireName;
 	int64_t Offset;
@@ -26,58 +27,17 @@ public:
 
 
 	bool IsSelected();
+	void setIsSelected(bool value);
 
-	int getSelectedCount()
-	{
-		int count = 0;
-		foreach(FileNode node in Childern)
-		{
-			count += node.getSelectedCount();
-		}
-		if (IsFile && IsSelected)
-		{
-			count++;
-		}
-		return count;
-	}
+	int getSelectedCount();
 
-	void setChilrenSelected(bool selected)
-	{
-		foreach(FileNode child in Childern)
-		{
-			child.IsSelected = selected;
-		}
-	}
+	void setChilrenSelected(bool selected);
 
 	int64_t getSize();
 
-	
+	std::string getSizeStr(int64_t _size);
 
-	public string getSizeStr(long _size)
-	{
-		string sizestr = "";
-		if (_size < 1024)
-		{
-			sizestr = $"{_size} B";
-		}
-		else if (_size >= 1024 && _size < 1048576)
-		{
-			sizestr = $"{_size / 1024f:F2} KB";
-		}
-		else if (_size < 1073741824 && _size >= 1048576)
-		{
-			sizestr = $"{(_size >> 10) / 1024f:F2} MB";
-		}
-		else
-		{
-			sizestr = $"{(_size >> 20) / 1024f:F2} GB";
-		}
-		return sizestr;
-	}
-
-	event PropertyChangedEventHandler PropertyChanged;
-
-
+	//event PropertyChangedEventHandler PropertyChanged;
 
 private:
 	bool isSelected;

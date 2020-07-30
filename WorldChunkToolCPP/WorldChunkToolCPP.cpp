@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <regex>
 #include <fstream>
+#include <memory>
 
 #include "oo2core_loader.h"
 #include "Utils.h"
@@ -14,13 +15,19 @@ namespace fs = std::filesystem;
 int printHelpInfo();
 
 void setFlag(const std::vector<std::string>& args, const std::string& argument, bool& flag, const std::string& printMessage);
-int ProcessFile(const std::string& FileInput, const flags currentFlag, const oo2core_loader * oo2coreInstance);
+int ProcessFile(const std::string& FileInput, const flags currentFlag, const oo2core_loader* oo2coreInstance);
 
 int main(int argc, char* argv[])
 {
 	std::cout << "==============================" << std::endl;
 	Utils::Print("WorldChunkTool v1.2.2 by MHVuze", PRINT_ORDER::BEFORE);
 	Utils::Print("C++ implementation by nh60211as", PRINT_ORDER::AFTER);
+
+	if (Utils::IsBigEndian())
+	{
+		std::cout << "Big endian machine is not supported now." << std::endl;
+		return 0;
+	}
 
 	if (argc == 1) // if there is no other input argument
 		return printHelpInfo();
@@ -34,7 +41,7 @@ int main(int argc, char* argv[])
 		return 2;
 	}
 
-	if(!oo2coreInstance.is_oo2core_8_win64_legit())
+	if (!oo2coreInstance.is_oo2core_8_win64_legit())
 	{
 		std::cout << OO2CORE_FILE_NAME << " is not legit." << std::endl;
 		std::cout << "Download the file from Warframe or something." << std::endl;
@@ -45,7 +52,7 @@ int main(int argc, char* argv[])
 
 	// load chunkKeyPattern
 	Utils::chunkKeyPattern = std::vector<uint8_t>(1000009);
-	std::ifstream chunkKeyReader("./keySequence.bin",std::ios::binary);
+	std::ifstream chunkKeyReader("./keySequence.bin", std::ios::binary);
 	chunkKeyReader.read(reinterpret_cast<char*>(Utils::chunkKeyPattern.data()), Utils::chunkKeyPattern.size());
 
 	std::string FileInput(argv[1]);
@@ -58,7 +65,7 @@ int main(int argc, char* argv[])
 		args.emplace_back(argv[i]);
 
 	// Set options
-	setFlag(args,"-AutoConfirm",currentFlag.FlagAutoConfirm,"Auto confirmation turned on.");
+	setFlag(args, "-AutoConfirm", currentFlag.FlagAutoConfirm, "Auto confirmation turned on.");
 	setFlag(args, "-UnpackAll", currentFlag.FlagUnpackAll, "Unpacking all chunk*.bin files into a single folder.");
 	setFlag(args, "-BuildPKG", currentFlag.FlagBuildPkg, "Building PKG.");
 	setFlag(args, "-BaseGame", currentFlag.FlagBaseGame, "Using legacy mode for MH:W base game chunks.");
@@ -81,7 +88,7 @@ int main(int argc, char* argv[])
 
 	if (currentFlag.FlagUnpackAll)
 	{
-		std::cout << "Output at: " << fs::current_path().string() << "\\chunk_combined" << std::endl; 
+		std::cout << "Output at: " << fs::current_path().string() << "\\chunk_combined" << std::endl;
 		Utils::pause();
 	}
 
@@ -117,7 +124,7 @@ int ProcessFile(const std::string& FileInput, const flags currentFlag, const oo2
 	}
 
 	int MagicInputFile = Utils::getFileMagicNumber(FileInput);
-	if (MagicInputFile== MagicChunk)
+	if (MagicInputFile == MagicChunk)
 	{
 		std::cout << "Chunk file detected." << std::endl;
 
@@ -133,13 +140,13 @@ int ProcessFile(const std::string& FileInput, const flags currentFlag, const oo2
 			std::list<FileNode*> FileCatalog;
 			std::string FilePath = fs::current_path().string() + "\\" + Utils::removeExtension(FileInput);
 			if (currentFlag.FlagUnpackAll)
-			FilePath = fs::current_path().string() + "\\chunk_combined";
+				FilePath = fs::current_path().string() + "\\chunk_combined";
 			FileCatalog = ChunkOtfInst.AnalyzeChunk(FileInput, FileCatalog, currentFlag.FlagBaseGame);
 			std::cout << "Extracting chunk file, please wait." << std::endl;
 			ChunkOtfInst.ExtractSelected(FileCatalog, FilePath, currentFlag.FlagBaseGame);
 			Utils::Print("\nFinished.", PRINT_ORDER::AFTER);
 			if (!currentFlag.FlagUnpackAll) { Utils::Print("Output at: " + FilePath, PRINT_ORDER::AFTER); }
-			if (!currentFlag.FlagAutoConfirm) {Utils::pause();}
+			if (!currentFlag.FlagAutoConfirm) { Utils::pause(); }
 		}
 		return 0;
 	}
