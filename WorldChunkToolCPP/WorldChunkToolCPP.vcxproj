@@ -134,6 +134,7 @@
       <ConformanceMode>true</ConformanceMode>
       <Optimization>Full</Optimization>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

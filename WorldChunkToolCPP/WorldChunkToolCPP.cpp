@@ -17,6 +17,8 @@ int printHelpInfo();
 void setFlag(const std::vector<std::string>& args, const std::string& argument, bool& flag, const std::string& printMessage);
 int ProcessFile(const std::string& FileInput, const flags currentFlag, const std::shared_ptr<oo2core_loader> & oo2coreInstance);
 
+
+// current testing argument: "C:/SteamLibrary/steamapps/common/Monster Hunter World/chunk/chunkG4.bin" -UnpackAll -AutoConfirm
 int main(int argc, char* argv[])
 {
 	std::cout << "==============================" << std::endl;
@@ -26,6 +28,12 @@ int main(int argc, char* argv[])
 	if (Utils::IsBigEndian())
 	{
 		std::cout << "Big endian machine is not supported now." << std::endl;
+		return 0;
+	}
+
+	if (!Utils::checkNeededFiles())
+	{
+		std::cout << "Needed file(s) missing." << std::endl;
 		return 0;
 	}
 

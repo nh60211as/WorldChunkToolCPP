@@ -43,6 +43,11 @@ namespace Utils
 		return !*((char*)&i);
 	}
 
+	static bool checkNeededFiles()
+	{
+		return true;
+	}
+
 	static void Print(const std::string& Input, PRINT_ORDER order)
 	{
 		if (order == PRINT_ORDER::AFTER)
@@ -72,6 +77,11 @@ namespace Utils
 			return true;
 
 		return false;
+	}
+
+	static std::string getUpperDirectory(const std::string& filePath)
+	{
+		return std::filesystem::path(filePath).parent_path().string();
 	}
 
 	static int getFileMagicNumber(const std::string& FileInput)

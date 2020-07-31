@@ -110,5 +110,6 @@ int64_t FileNode::getSize()
 
 void FileNode::setNameWithSize(const std::string& name, int64_t _size) // why was name passed?????
 {
+	//NameWithSize = Name + " (" + std::to_string(_size) + ")";
 	NameWithSize = name + " (" + std::to_string(_size) + ")";
 }

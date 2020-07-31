@@ -349,15 +349,19 @@ int ChunkOTF::ExtractSelected(std::list<std::shared_ptr<FileNode>>& itemlist, st
 			if (!node->IsFile)
 				fs::create_directories(BaseLocation + node->EntireName + "\\");
 			else
-				fs::create_directories(BaseLocation + node->EntireName);
+			{
+				fs::create_directories(Utils::getUpperDirectory(BaseLocation + node->EntireName)); // ok seriously how did c# do it
+			}
 			// what does this part mean???
 			if (node->IsFile)
 			{
 				std::cout << "Extracting " << node->EntireName << " ...                          \r";
-				std::ofstream writer(BaseLocation + node->EntireName);
+				//fs::create_directories(Utils::getUpperDirectory(BaseLocation + node->EntireName)); // ok seriously how did c# do it
+				std::ofstream writer(BaseLocation + node->EntireName, std::ios::binary);
 				std::vector<uint8_t> temp(size);
 				temp = CurNodeChunk->getOnLength(temp.size(), temp, 0, FlagBaseGame);
 				writer.write(reinterpret_cast<char*> (temp.data()), temp.size());
+				writer.close();
 			}
 		}
 	}
