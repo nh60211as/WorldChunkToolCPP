@@ -1,5 +1,8 @@
 #include "oo2core_loader.h"
+
 #include <vector>
+
+#include "Utils.h"
 
 oo2core_loader::oo2core_loader()
 {
@@ -15,19 +18,11 @@ oo2core_loader::~oo2core_loader()
         FreeLibrary(libraryInstance);
 }
 
-std::vector<uint8_t> oo2core_loader::Decompress(std::vector<uint8_t> & buffer, int size, int uncompressedSize) const
+int oo2core_loader::Decompress(uint8_t * buffer, int size, uint8_t * outputBuffer, int uncompressedSize) const
 {
-    std::vector<uint8_t> decompressedBuffer(uncompressedSize);
-    int decompressedCount = g_OodleDecompressFunc(buffer.data(), size, decompressedBuffer.data(), uncompressedSize, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3);
+    int decompressedCount = g_OodleDecompressFunc(buffer, size, outputBuffer, uncompressedSize, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3);
     
-    if (decompressedCount == uncompressedSize)
-        return decompressedBuffer;
-    if (decompressedCount < uncompressedSize)
-    {
-        decompressedBuffer.resize(decompressedCount);
-        return decompressedBuffer;
-    }
-    return std::vector<uint8_t>();
+    return decompressedCount;
 }
 
 bool oo2core_loader::is_oo2core_8_win64_legit()

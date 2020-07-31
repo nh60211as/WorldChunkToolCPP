@@ -10,7 +10,10 @@ namespace fs = std::filesystem;
 
 ChunkOTF::ChunkOTF(std::shared_ptr<oo2core_loader> oo2coreInstance_):
 	oo2coreInstance(oo2coreInstance_),
-	chunkDecrypter()
+	chunkDecrypter(),
+	DictCount(0),
+	cur_index(0),
+	cur_pointer(0)
 {
 }
 
@@ -96,7 +99,7 @@ std::list<std::shared_ptr<FileNode>> ChunkOTF::AnalyzeChunk(const std::string& F
 
 		std::string StringNameParent = getName(0x3C, FlagBaseGame);
 		int64_t FileSize = getInt64(FlagBaseGame);
-		long FileOffset = getInt64(FlagBaseGame);
+		int64_t FileOffset = getInt64(FlagBaseGame);
 		int EntryType = getInt32(FlagBaseGame);
 		int CountChildren = getInt32(FlagBaseGame);
 
@@ -142,7 +145,7 @@ std::list<std::shared_ptr<FileNode>> ChunkOTF::AnalyzeChunk(const std::string& F
 				}
 				StringNameChild = getName(0x50, FlagBaseGame);
 				std::vector<uint8_t> temp(0x68);
-				getOnLength(temp.size(), temp, 0, FlagBaseGame);
+				getOnLength(temp.size(), temp.data(), 0, FlagBaseGame);
 			}
 			// https://stackoverflow.com/questions/4025482/cant-escape-the-backslash-with-regex
 			// split by regular expression. "\\\\" will be interpreted as "\\"
@@ -219,7 +222,9 @@ std::vector<uint8_t> ChunkOTF::getDecompressedChunk(int64_t offset, int64_t size
 		std::vector<uint8_t> ChunkCompressed(size);
 		reader.read(reinterpret_cast<char*>(ChunkCompressed.data()), size);
 
-		std::vector<uint8_t> ChunkDecompressed = oo2coreInstance->Decompress(ChunkCompressed, ChunkCompressed.size(), 0x40000);
+		std::vector<uint8_t> ChunkDecompressed(0x40000);
+		int actualSize = oo2coreInstance->Decompress(ChunkCompressed.data(), ChunkCompressed.size(), ChunkDecompressed.data(), ChunkDecompressed.size());
+		ChunkDecompressed.resize(actualSize);
 
 		if (!FlagBaseGame)
 		{
@@ -244,7 +249,7 @@ std::vector<uint8_t> ChunkOTF::getDecompressedChunk(int64_t offset, int64_t size
 std::string ChunkOTF::getName(int targetlength, bool FlagBaseGame)
 {
 	std::vector<uint8_t> tmp(targetlength);
-	getOnLength(targetlength, tmp, 0, FlagBaseGame);
+	getOnLength(targetlength, tmp.data(), 0, FlagBaseGame);
 
 	// find the index of value 0
 	std::vector<uint8_t>::iterator stringEnd = std::find(tmp.begin(), tmp.end(), 0);
@@ -258,43 +263,45 @@ std::string ChunkOTF::getName(int targetlength, bool FlagBaseGame)
 
 int64_t ChunkOTF::getInt64(bool FlagBaseGame)
 {
-	std::vector<uint8_t> tmp(8);
-	getOnLength(8, tmp, 0, FlagBaseGame);
+	std::array<uint8_t, 8> tmp = {0,0,0,0,0,0,0,0};
+	getOnLength(8, tmp.data(), 0, FlagBaseGame);
 
 	return *(int64_t*)(tmp.data());
 }
 
 int ChunkOTF::getInt32(bool FlagBaseGame)
 {
-	std::vector<uint8_t> tmp(4);
-	getOnLength(4, tmp, 0, FlagBaseGame);
+	std::array<uint8_t, 4> tmp = {0,0,0,0}; // do I seriously have to initialize every array?
+	getOnLength(4, tmp.data(), 0, FlagBaseGame);
 
 	return *(int*)(tmp.data());
 }
 
-std::vector<uint8_t> ChunkOTF::getOnLength(int64_t targetlength, std::vector<uint8_t>& tmp, int64_t startAddr, bool FlagBaseGame)
+void ChunkOTF::getOnLength(int64_t targetlength, uint8_t* tmpPtr, int64_t startAddr, bool FlagBaseGame)
 {
 	if (cur_pointer + targetlength < 0x40000)
 	{
-		std::copy(std::begin(ChunkDecompressed) + cur_pointer, std::begin(ChunkDecompressed) + cur_pointer + targetlength, std::begin(tmp) + startAddr);
+		std::copy(std::begin(ChunkDecompressed) + cur_pointer, std::begin(ChunkDecompressed) + cur_pointer + targetlength, tmpPtr + startAddr);
 		cur_pointer += (int)targetlength;
 	}
 	else
 	{
 		int tmp_can_read_length = 0x40000 - cur_pointer;
-		long tmp_remain_length = targetlength - tmp_can_read_length;
-		std::copy(std::begin(ChunkDecompressed) + cur_pointer, std::begin(ChunkDecompressed) + cur_pointer + tmp_can_read_length, std::begin(tmp) + startAddr);
+		int64_t tmp_remain_length = targetlength - tmp_can_read_length;
+		std::copy(std::begin(ChunkDecompressed) + cur_pointer, std::begin(ChunkDecompressed) + cur_pointer + tmp_can_read_length, tmpPtr + startAddr);
 		cur_pointer = 0;
 		ChunkDecompressed = NextChunkDecompressed;
 		cur_index += 1;
-		if (cur_index + 1 < DictCount) { NextChunkDecompressed = getDecompressedChunk(ChunkOffsetDict[cur_index + 1], MetaChunk[ChunkOffsetDict[cur_index + 1]], Reader, FlagBaseGame, cur_index + 1); }
+		if (cur_index + 1 < DictCount) 
+		{ 
+			NextChunkDecompressed = getDecompressedChunk(ChunkOffsetDict[cur_index + 1], MetaChunk[ChunkOffsetDict[cur_index + 1]], Reader, FlagBaseGame, cur_index + 1); 
+		}
 		else
 		{
-			NextChunkDecompressed.resize(0);
+			NextChunkDecompressed.clear();
 		}
-		getOnLength(tmp_remain_length, tmp, startAddr + tmp_can_read_length, FlagBaseGame);
+		getOnLength(tmp_remain_length, tmpPtr, startAddr + tmp_can_read_length, FlagBaseGame);
 	}
-	return tmp;
 }
 
 int ChunkOTF::ExtractSelected(std::list<std::shared_ptr<FileNode>>& itemlist, std::string BaseLocation, bool FlagBaseGame)
@@ -311,7 +318,7 @@ int ChunkOTF::ExtractSelected(std::list<std::shared_ptr<FileNode>>& itemlist, st
 			ChunkOTF* CurNodeChunk = this;
 			CurNodeChunk->cur_index = node->ChunkIndex;
 			CurNodeChunk->cur_pointer = node->ChunkPointer;
-			long size = node->Size;
+			int64_t size = node->Size;
 			if (CurNodeChunk->ChunkCache.find(CurNodeChunk->cur_index) != CurNodeChunk->ChunkCache.end())
 			{
 				CurNodeChunk->ChunkDecompressed = CurNodeChunk->ChunkCache[CurNodeChunk->cur_index];
@@ -359,7 +366,7 @@ int ChunkOTF::ExtractSelected(std::list<std::shared_ptr<FileNode>>& itemlist, st
 				//fs::create_directories(Utils::getUpperDirectory(BaseLocation + node->EntireName)); // ok seriously how did c# do it
 				std::ofstream writer(BaseLocation + node->EntireName, std::ios::binary);
 				std::vector<uint8_t> temp(size);
-				temp = CurNodeChunk->getOnLength(temp.size(), temp, 0, FlagBaseGame);
+				CurNodeChunk->getOnLength(temp.size(), temp.data(), 0, FlagBaseGame);
 				writer.write(reinterpret_cast<char*> (temp.data()), temp.size());
 				writer.close();
 			}

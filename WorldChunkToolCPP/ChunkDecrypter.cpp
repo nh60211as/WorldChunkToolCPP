@@ -49,13 +49,14 @@ ChunkDecrypter::ChunkDecrypter(const std::string& chunkKeyPatternFilePath)
 
 
 
-void ChunkDecrypter::DecryptChunk(std::vector<uint8_t>& data, const int dictionaryCount)
+void ChunkDecrypter::DecryptChunk(std::vector<uint8_t>& data, const int dictionaryCount) const
 {
 	int keyPos = chunkKeyPattern[dictionaryCount + 8];
-	const std::vector<uint8_t> & chunkKey = chunkKeys[keyPos]; // will it be optimized to take the reference
+	const uint8_t * chunkKey = chunkKeys[keyPos].data(); // will it be optimized to take the reference
 
 	for (int i = 0; i < data.size(); i++)
 	{
-		data[i] = (chunkKey[i % chunkKey.size()] ^ data[i]);
+		//data[i] = (chunkKey[i % chunkKey.size()] ^ data[i]);
+		data[i] = (chunkKey[i % 16] ^ data[i]); // it's fixed size
 	}
 }

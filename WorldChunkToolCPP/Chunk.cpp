@@ -46,7 +46,7 @@ void Chunk::DecompressChunks(const std::string& FileInput, const flags currentFl
 
         //int High = ArrayChunkSize[0] >> 4;
         //ArrayChunkSize[0] = BitConverter.GetBytes(High)[0];
-        ArrayChunkSize[0] = *(uint8_t*)(ArrayChunkSize[0] >> 4); // does the endianess need a check
+        ArrayChunkSize[0] = *(uint8_t*)(ArrayChunkSize[0] >> 4u); // does the endianess need a check
         //Array.Copy(ArrayChunkSize, ArrayTmp1, ArrayChunkSize.Length);
         std::copy(std::begin(ArrayChunkSize), std::end(ArrayChunkSize), std::begin(ArrayTmp1));
         //long ChunkSize = BitConverter.ToInt64(ArrayTmp1, 0); // why are C# examples so over-engineered

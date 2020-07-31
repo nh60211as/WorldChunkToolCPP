@@ -67,7 +67,11 @@ int main(int argc, char* argv[])
 	std::vector<std::string> args;
 	args.reserve(static_cast<size_t>(argc) - 2);
 	for (int i = 2; i < argc; i++)
-		args.emplace_back(argv[i]);
+	{
+		std::string argument = argv[i];
+		Utils::sanitizeNewLine(argument);
+		args.emplace_back(argument);
+	}
 
 	// Set options
 	setFlag(args, "-AutoConfirm", currentFlag.FlagAutoConfirm, "Auto confirmation turned on.");
@@ -94,7 +98,7 @@ int main(int argc, char* argv[])
 	if (currentFlag.FlagUnpackAll)
 	{
 		std::cout << "Output at: " << fs::current_path().string() << "\\chunk_combined" << std::endl;
-		Utils::pause();
+		Utils::pause(currentFlag.FlagAutoConfirm);
 	}
 
 	return 0;
@@ -151,7 +155,7 @@ int ProcessFile(const std::string& FileInput, const flags currentFlag, const std
 			ChunkOtfInst.ExtractSelected(FileCatalog, FilePath, currentFlag.FlagBaseGame);
 			Utils::Print("\nFinished.", PRINT_ORDER::AFTER);
 			if (!currentFlag.FlagUnpackAll) { Utils::Print("Output at: " + FilePath, PRINT_ORDER::AFTER); }
-			if (!currentFlag.FlagAutoConfirm) { Utils::pause(); }
+			Utils::pause(currentFlag.FlagAutoConfirm);
 		}
 		return 0;
 	}
@@ -160,13 +164,13 @@ int ProcessFile(const std::string& FileInput, const flags currentFlag, const std
 		std::cout << "PKG file detected." << std::endl;
 		// TODO:
 		//PKG.ExtractPKG(FileInput, FlagAutoConfirm, FlagUnpackAll, false);
-		if (!currentFlag.FlagAutoConfirm) { Utils::pause(); }
+		Utils::pause(currentFlag.FlagAutoConfirm);
 		return 0;
 	}
 	else
 	{
 		std::cout << "ERROR: Invalid magic " << std::hex << MagicInputFile << "." << std::endl;
-		if (!currentFlag.FlagAutoConfirm) { Utils::pause(); }
+		Utils::pause(currentFlag.FlagAutoConfirm);
 		return 0;
 	}
 

@@ -7,6 +7,12 @@
 #include <filesystem>
 #include <regex>
 
+// necessary file names
+//static constexpr const char* oo2coreFileName = "./oo2core_8_win64.dll";
+#define OO2CORE_FILE_NAME "./oo2core_8_win64.dll"
+static constexpr const char* CHUNK_KEY_SEQUENCE_FILE_NAME = "./keySequence.bin";
+
+// flags for user input
 struct flags
 {
 	bool FlagBuildPkg;
@@ -23,6 +29,7 @@ struct flags
 	};
 };
 
+// print order for Util::Print()
 enum class PRINT_ORDER
 {
 	BEFORE,
@@ -30,13 +37,12 @@ enum class PRINT_ORDER
 };
 
 
+// magic numbers of chunk and pkg
 static constexpr int MagicChunk = 0x00504D43;
 static constexpr int MagicPKG = 0x20474B50;
 
 namespace Utils
 {
-	static std::vector<uint8_t> chunkKeyPattern; // it should be initialized in main()
-
 	static int IsBigEndian()
 	{
 		int i = 1;
@@ -60,6 +66,12 @@ namespace Utils
 			std::cout << "\n==============================" << std::endl;
 			std::cout << Input << std::endl;
 		}
+	}
+
+	// https://stackoverflow.com/questions/1488775/c-remove-new-line-from-multiline-string
+	static void sanitizeNewLine(std::string &str)
+	{
+		str.erase(std::remove(str.begin(), str.end(), '\n'), str.end());
 	}
 
 	template <class T> static bool contains(const std::vector<T>& v, const T& target)
@@ -114,10 +126,13 @@ namespace Utils
 		return 	Utils::removeExtension(std::filesystem::path(fileInput).filename().string());
 	}
 
-	static void pause()
+	static void pause(bool autoConfirm)
 	{
-		std::cout << "Press any key to continue...";
-		std::cin.get();
+		if (!autoConfirm)
+		{
+			std::cout << "Press any key to continue...";
+			std::cin.get();
+		}
 	}
 };
 
