@@ -8,7 +8,7 @@
 
 namespace fs = std::filesystem;
 
-ChunkOTF::ChunkOTF(std::shared_ptr<oo2core_loader> oo2coreInstance_):
+ChunkOTF::ChunkOTF(std::shared_ptr<oo2core_loader> oo2coreInstance_) :
 	oo2coreInstance(oo2coreInstance_),
 	chunkDecrypter(),
 	DictCount(0),
@@ -17,7 +17,7 @@ ChunkOTF::ChunkOTF(std::shared_ptr<oo2core_loader> oo2coreInstance_):
 {
 }
 
-std::list<std::shared_ptr<FileNode>> ChunkOTF::AnalyzeChunk(const std::string& FileInput, std::list<std::shared_ptr<FileNode>> & inputFileList, bool FlagBaseGame)
+std::list<std::shared_ptr<FileNode>> ChunkOTF::AnalyzeChunk(const std::string& FileInput, std::list<std::shared_ptr<FileNode>>& inputFileList, bool FlagBaseGame)
 {
 	fileinput = FileInput; // store the file input
 
@@ -38,13 +38,13 @@ std::list<std::shared_ptr<FileNode>> ChunkOTF::AnalyzeChunk(const std::string& F
 
 	double DiskSpace = (int64_t)ChunkCount * (int64_t)0x40000 * 1e-9;
 	// TODO: actually parse the string
-	Utils::Print(std::to_string(ChunkCount) + " subchunks detected. Requires at least: " + std::to_string(std::round(DiskSpace*100)/100) + " GB.", PRINT_ORDER::AFTER);
+	Utils::Print(std::to_string(ChunkCount) + " subchunks detected. Requires at least: " + std::to_string(std::round(DiskSpace * 100) / 100) + " GB.", PRINT_ORDER::AFTER);
 
 	// Read file list
 	DictCount = 0;
 	int64_t totalChunkSize = 0;
-	std::array<uint8_t, 8> ArrayChunkSize = {1,1,1,0,0,0,0,0}; // zero initialize the array. Is there a better way?
-	std::array<uint8_t, 8> ArrayChunkOffset = {1,1,1,1,1,0,0,0}; // the ones are just a note to me that they will be modified
+	std::array<uint8_t, 8> ArrayChunkSize = { 1,1,1,0,0,0,0,0 }; // zero initialize the array. Is there a better way?
+	std::array<uint8_t, 8> ArrayChunkOffset = { 1,1,1,1,1,0,0,0 }; // the ones are just a note to me that they will be modified
 	for (int i = 0; i < ChunkCount; i++)
 	{
 		// Process file size
@@ -78,14 +78,14 @@ std::list<std::shared_ptr<FileNode>> ChunkOTF::AnalyzeChunk(const std::string& F
 	int64_t cur_offset = ChunkOffsetDict[cur_index];
 	int64_t cur_size = MetaChunk[cur_offset];
 
-	ChunkDecompressed = getDecompressedChunk(cur_offset, cur_size, Reader, FlagBaseGame, cur_index);
+	getDecompressedChunk(cur_offset, cur_size, Reader, FlagBaseGame, cur_index, ChunkDecompressed);
 	if (cur_index + 1 < DictCount)
 	{
-		NextChunkDecompressed = getDecompressedChunk(ChunkOffsetDict[cur_index + 1], MetaChunk[ChunkOffsetDict[cur_index + 1]], Reader, FlagBaseGame, cur_index + 1);
+		getDecompressedChunk(ChunkOffsetDict[cur_index + 1], MetaChunk[ChunkOffsetDict[cur_index + 1]], Reader, FlagBaseGame, cur_index + 1, NextChunkDecompressed);
 	}
 	else
 	{
-		NextChunkDecompressed.resize(0);
+		NextChunkDecompressed.clear();
 	}
 	cur_pointer = 0x0C;
 	int TotalParentCount = *(int*)(ChunkDecompressed.data() + cur_pointer);
@@ -149,7 +149,7 @@ std::list<std::shared_ptr<FileNode>> ChunkOTF::AnalyzeChunk(const std::string& F
 			}
 			// https://stackoverflow.com/questions/4025482/cant-escape-the-backslash-with-regex
 			// split by regular expression. "\\\\" will be interpreted as "\\"
-			std::vector<std::string> fathernodes = Utils::stringSplit(StringNameChild, "\\\\"); 
+			std::vector<std::string> fathernodes = Utils::stringSplit(StringNameChild, "\\\\");
 			bool isFile = false;
 			if (EntryType == 0x02 || EntryType == 0x00) isFile = true;
 			std::shared_ptr<FileNode> child_node = std::make_shared<FileNode>(fathernodes.back(), isFile, FileInput);
@@ -163,15 +163,15 @@ std::list<std::shared_ptr<FileNode>> ChunkOTF::AnalyzeChunk(const std::string& F
 			child_node->EntireName = StringNameChild;
 			std::shared_ptr<FileNode> target_node = root_node;
 			//std::cout << j << ": " << target_node->EntireName << std::endl;
-			for (const std::string & node_name : fathernodes)
+			for (const std::string& node_name : fathernodes)
 			{
 				if (node_name.empty()) continue;
-				for (const std::shared_ptr<FileNode> & node : target_node->Childern)
+				for (const std::shared_ptr<FileNode>& node : target_node->Childern)
 				{
 					//std::cout << node->Name.size() << "==" << node_name.size() << std::endl;
 					//std::cout << node->Name << "==" << node_name << std::endl;
 					//std::cout << (node->Name.compare(node_name) == 0) << std::endl;
-					if (node->Name.compare(node_name)==0)
+					if (node->Name.compare(node_name) == 0)
 					{
 						if (node->Name == child_node->Name) { break; }
 						target_node = node;
@@ -213,7 +213,7 @@ std::list<std::shared_ptr<FileNode>> ChunkOTF::AnalyzeChunk(const std::string& F
 	return filelist;
 }
 
-std::vector<uint8_t> ChunkOTF::getDecompressedChunk(int64_t offset, int64_t size, std::ifstream& reader, bool FlagBaseGame, int chunkNum)
+void ChunkOTF::getDecompressedChunk(int64_t offset, int64_t size, std::ifstream& reader, bool FlagBaseGame, int chunkNum, std::vector<uint8_t>& outputDecompressedChunk)
 {
 	if (size != 0)
 	{
@@ -223,27 +223,22 @@ std::vector<uint8_t> ChunkOTF::getDecompressedChunk(int64_t offset, int64_t size
 		reader.read(reinterpret_cast<char*>(ChunkCompressed.data()), size);
 
 		// nothing more i can do here
-		std::vector<uint8_t> ChunkDecompressed(0x40000);
-		int actualSize = oo2coreInstance->Decompress(ChunkCompressed.data(), ChunkCompressed.size(), ChunkDecompressed.data(), ChunkDecompressed.size());
+		outputDecompressedChunk.resize(0x40000);
+		int actualSize = oo2coreInstance->Decompress(ChunkCompressed.data(), ChunkCompressed.size(), outputDecompressedChunk.data(), outputDecompressedChunk.size());
 		ChunkDecompressed.resize(actualSize);
 
 		if (!FlagBaseGame)
-		{
-			chunkDecrypter.DecryptChunk(ChunkDecompressed.data(), actualSize, chunkNum);
-		}
-
-		return ChunkDecompressed;
+			chunkDecrypter.DecryptChunk(outputDecompressedChunk.data(), actualSize, chunkNum);
 	}
 	else
 	{
 		reader.seekg(offset, std::ios_base::beg);
-		std::vector<uint8_t> ChunkDecompressed(0x40000);
-		reader.read(reinterpret_cast<char*>(ChunkDecompressed.data()), ChunkDecompressed.size());
+		outputDecompressedChunk.resize(0x40000);
+		reader.read(reinterpret_cast<char*>(outputDecompressedChunk.data()), outputDecompressedChunk.size());
 		if (!FlagBaseGame)
 		{
-			chunkDecrypter.DecryptChunk(ChunkDecompressed.data(), ChunkDecompressed.size(), chunkNum);
+			chunkDecrypter.DecryptChunk(outputDecompressedChunk.data(), outputDecompressedChunk.size(), chunkNum);
 		}
-		return ChunkDecompressed;
 	}
 }
 
@@ -264,7 +259,7 @@ std::string ChunkOTF::getName(int targetlength, bool FlagBaseGame)
 
 int64_t ChunkOTF::getInt64(bool FlagBaseGame)
 {
-	std::array<uint8_t, 8> tmp = {0,0,0,0,0,0,0,0};
+	std::array<uint8_t, 8> tmp = { 0,0,0,0,0,0,0,0 };
 	getOnLength(8, tmp.data(), 0, FlagBaseGame);
 
 	return *(int64_t*)(tmp.data());
@@ -272,7 +267,7 @@ int64_t ChunkOTF::getInt64(bool FlagBaseGame)
 
 int ChunkOTF::getInt32(bool FlagBaseGame)
 {
-	std::array<uint8_t, 4> tmp = {0,0,0,0}; // do I seriously have to initialize every array?
+	std::array<uint8_t, 4> tmp = { 0,0,0,0 }; // do I seriously have to initialize every array?
 	getOnLength(4, tmp.data(), 0, FlagBaseGame);
 
 	return *(int*)(tmp.data());
@@ -293,9 +288,9 @@ void ChunkOTF::getOnLength(int64_t targetlength, uint8_t* tmpPtr, int64_t startA
 		cur_pointer = 0;
 		ChunkDecompressed = NextChunkDecompressed;
 		cur_index += 1;
-		if (cur_index + 1 < DictCount) 
-		{ 
-			NextChunkDecompressed = getDecompressedChunk(ChunkOffsetDict[cur_index + 1], MetaChunk[ChunkOffsetDict[cur_index + 1]], Reader, FlagBaseGame, cur_index + 1); 
+		if (cur_index + 1 < DictCount)
+		{
+			getDecompressedChunk(ChunkOffsetDict[cur_index + 1], MetaChunk[ChunkOffsetDict[cur_index + 1]], Reader, FlagBaseGame, cur_index + 1, NextChunkDecompressed);
 		}
 		else
 		{
@@ -327,12 +322,12 @@ int ChunkOTF::ExtractSelected(std::list<std::shared_ptr<FileNode>>& itemlist, st
 			else
 			{
 				if (CurNodeChunk->ChunkCache.size() > 20) CurNodeChunk->ChunkCache.clear();
-				CurNodeChunk->ChunkDecompressed =
-					CurNodeChunk->getDecompressedChunk(CurNodeChunk->ChunkOffsetDict[CurNodeChunk->cur_index],
-						CurNodeChunk->MetaChunk[CurNodeChunk->ChunkOffsetDict[CurNodeChunk->cur_index]],
-						CurNodeChunk->Reader,
-						FlagBaseGame,
-						CurNodeChunk->cur_index);
+				CurNodeChunk->getDecompressedChunk(CurNodeChunk->ChunkOffsetDict[CurNodeChunk->cur_index],
+					CurNodeChunk->MetaChunk[CurNodeChunk->ChunkOffsetDict[CurNodeChunk->cur_index]],
+					CurNodeChunk->Reader,
+					FlagBaseGame,
+					CurNodeChunk->cur_index, 
+					CurNodeChunk->ChunkDecompressed);
 				CurNodeChunk->ChunkCache.emplace(CurNodeChunk->cur_index, CurNodeChunk->ChunkDecompressed);
 			}
 			if (CurNodeChunk->ChunkCache.find(CurNodeChunk->cur_index + 1) != CurNodeChunk->ChunkCache.end())
@@ -344,12 +339,12 @@ int ChunkOTF::ExtractSelected(std::list<std::shared_ptr<FileNode>>& itemlist, st
 				if (CurNodeChunk->ChunkCache.size() > 20) CurNodeChunk->ChunkCache.clear();
 				if (CurNodeChunk->cur_index + 1 < CurNodeChunk->DictCount)
 				{
-					CurNodeChunk->NextChunkDecompressed =
 						CurNodeChunk->getDecompressedChunk(CurNodeChunk->ChunkOffsetDict[CurNodeChunk->cur_index + 1],
 							CurNodeChunk->MetaChunk[CurNodeChunk->ChunkOffsetDict[CurNodeChunk->cur_index + 1]],
 							CurNodeChunk->Reader,
 							FlagBaseGame,
-							CurNodeChunk->cur_index + 1);
+							CurNodeChunk->cur_index + 1, 
+							CurNodeChunk->NextChunkDecompressed);
 				}
 				else { CurNodeChunk->NextChunkDecompressed.clear(); }
 				CurNodeChunk->ChunkCache.emplace(CurNodeChunk->cur_index + 1, CurNodeChunk->NextChunkDecompressed);

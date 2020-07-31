@@ -69,7 +69,7 @@ namespace Utils
 	}
 
 	// https://stackoverflow.com/questions/1488775/c-remove-new-line-from-multiline-string
-	static void sanitizeNewLine(std::string &str)
+	static void sanitizeNewLine(std::string& str)
 	{
 		str.erase(std::remove(str.begin(), str.end(), '\n'), str.end());
 	}
@@ -104,6 +104,34 @@ namespace Utils
 		Reader.close();
 
 		return MagicInputFile;
+	}
+
+	static std::vector<std::string> sortFileByChunkName(const std::string& FileInput, const std::regex& wordRegex)
+	{
+		std::vector<std::pair<int, std::string>> chunkNamePairs; // .../chunk/chunkG2.bin, first:2 , second: .../chunk/chunkG2.bin
+
+		std::smatch chunkMatch;
+		for (const std::filesystem::directory_entry& file : std::filesystem::directory_iterator(FileInput))
+		{
+			std::string ChunkFile = std::filesystem::path(file).filename().string(); // get the file name
+			if (std::regex_search(ChunkFile, chunkMatch, wordRegex))
+			{
+				if (chunkMatch.size() == 2) // only when the matched patteren is exactly 1
+					chunkNamePairs.emplace_back(std::stoi(chunkMatch[1].str()), std::filesystem::path(file).string());
+			}
+		}
+
+		// sort by chunk number
+		std::sort(std::begin(chunkNamePairs), std::end(chunkNamePairs),
+			[](const std::pair<int, std::string>& a, const std::pair<int, std::string>& b) {return a.first < b.first; }
+		);
+
+		std::vector<std::string> ans;
+		ans.reserve(chunkNamePairs.size());
+		for (const std::pair<int, std::string>& p : chunkNamePairs)
+			ans.emplace_back(p.second);
+
+		return ans;
 	}
 
 	// https://cloud.tencent.com/developer/article/1433558

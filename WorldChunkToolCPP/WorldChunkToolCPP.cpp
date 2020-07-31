@@ -4,6 +4,7 @@
 #include <regex>
 #include <fstream>
 #include <memory>
+#include <chrono>
 
 #include "oo2core_loader.h"
 #include "Utils.h"
@@ -82,12 +83,10 @@ int main(int argc, char* argv[])
 	// Determine action based on file magic
 	if (currentFlag.FlagUnpackAll && Utils::isDirectory(FileInput))
 	{
-		const std::regex wordRegex = currentFlag.FlagBaseGame ? std::regex("chunk*.bin") : std::regex("chunkG*.bin"); // no wonder it never worked after iceborne
-		for (const fs::directory_entry& file : fs::directory_iterator(FileInput))
+		const std::regex wordRegex = currentFlag.FlagBaseGame ? std::regex("chunk([0-9]+).bin") : std::regex("chunkG([0-9]+).bin"); // no wonder it never worked after iceborne
+		std::vector<std::string> ChunkFileList = Utils::sortFileByChunkName(FileInput, wordRegex);
+		for (const std::string ChunkFile : ChunkFileList)
 		{
-			std::string ChunkFile = fs::path(file).filename().string(); // get the file name
-			if (!std::regex_match(ChunkFile, wordRegex)) // if the file name doesn't match the pattern (it's harder than I thought)
-				continue;
 			std::cout << "Processing " << ChunkFile << "." << std::endl;
 			ProcessFile(ChunkFile, currentFlag, oo2coreInstance);
 		}
