@@ -33,7 +33,7 @@ private:
 	const std::shared_ptr<oo2core_loader> oo2coreInstance;
 	const ChunkDecrypter chunkDecrypter;
 
-	void getDecompressedChunk(int64_t offset, int64_t size, std::ifstream& reader, bool FlagBaseGame, int chunkNum, std::vector<uint8_t>& outputDecompressedChunk);
+	std::vector<uint8_t> getDecompressedChunk(int64_t offset, int64_t size, std::ifstream& reader, bool FlagBaseGame, int chunkNum);
 	//To read an ASCII string from chunk bytes
 	std::string getName(int targetlength, bool FlagBaseGame);
 	//To read a byte array at length of targetlength

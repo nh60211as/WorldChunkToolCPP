@@ -49,9 +49,15 @@ namespace Utils
 		return !*((char*)&i);
 	}
 
-	static bool checkNeededFiles()
+	static std::vector<std::string> fetchMissingFileList()
 	{
-		return true;
+		std::vector<std::string> missingFileList;
+		if (!std::filesystem::exists(OO2CORE_FILE_NAME))
+			missingFileList.emplace_back(std::filesystem::path(OO2CORE_FILE_NAME).filename().string());
+		if (!std::filesystem::exists(CHUNK_KEY_SEQUENCE_FILE_NAME))
+			missingFileList.emplace_back(std::filesystem::path(CHUNK_KEY_SEQUENCE_FILE_NAME).filename().string());
+
+		return missingFileList;
 	}
 
 	static void Print(const std::string& Input, PRINT_ORDER order)

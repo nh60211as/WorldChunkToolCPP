@@ -31,15 +31,20 @@ int main(int argc, char* argv[])
 		std::cout << "Big endian machine is not supported now." << std::endl;
 		return 0;
 	}
-
-	if (!Utils::checkNeededFiles())
+	
+	std::vector<std::string> missingFileList = Utils::fetchMissingFileList();
+	if (!missingFileList.empty())
 	{
-		std::cout << "Needed file(s) missing." << std::endl;
+		for(const std::string & missingFile:missingFileList)
+		std::cout << "Needed file " << missingFile << " missing." << std::endl;
 		return 0;
 	}
 
 	if (argc == 1) // if there is no other input argument
-		return printHelpInfo();
+	{
+		printHelpInfo();
+		return 0;
+	}
 
 	// load oo2core_8_win64.dll
 	std::shared_ptr<oo2core_loader> oo2coreInstance = std::make_shared<oo2core_loader>();
@@ -80,7 +85,7 @@ int main(int argc, char* argv[])
 	setFlag(args, "-BuildPKG", currentFlag.FlagBuildPkg, "Building PKG.");
 	setFlag(args, "-BaseGame", currentFlag.FlagBaseGame, "Using legacy mode for MH:W base game chunks.");
 
-	// Determine action based on file magic
+
 	if (currentFlag.FlagUnpackAll && Utils::isDirectory(FileInput))
 	{
 		const std::regex wordRegex = currentFlag.FlagBaseGame ? std::regex("chunk([0-9]+).bin") : std::regex("chunkG([0-9]+).bin"); // no wonder it never worked after iceborne
@@ -91,8 +96,15 @@ int main(int argc, char* argv[])
 			ProcessFile(ChunkFile, currentFlag, oo2coreInstance);
 		}
 	}
-	else
+	else if (fs::exists(FileInput))
+	{
 		ProcessFile(FileInput, currentFlag, oo2coreInstance);
+	}
+	else
+	{
+		std::cout << "Input is not a file or did not specify -UnpackAll when input is a folder." << std::endl;
+		return 0;
+	}
 
 	if (currentFlag.FlagUnpackAll)
 	{
@@ -125,6 +137,7 @@ void setFlag(const std::vector<std::string>& args, const std::string& argument, 
 
 int ProcessFile(const std::string& FileInput, const flags currentFlag, const std::shared_ptr<oo2core_loader> & oo2coreInstance)
 {
+	// this is processed by main()
 	if (!fs::exists(FileInput))
 	{
 		std::cout << "ERROR: Specified file doesn't exist." << std::endl;

@@ -339,3 +339,4 @@ ASALocalRun/
 # BeatPulse healthcheck temp database
 healthchecksdb
 /WorldChunkToolCPP/chunk_combined
+/WorldChunkToolCPP/oo2core_8_win64.dll
