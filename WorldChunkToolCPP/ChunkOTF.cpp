@@ -222,13 +222,14 @@ std::vector<uint8_t> ChunkOTF::getDecompressedChunk(int64_t offset, int64_t size
 		std::vector<uint8_t> ChunkCompressed(size);
 		reader.read(reinterpret_cast<char*>(ChunkCompressed.data()), size);
 
+		// nothing more i can do here
 		std::vector<uint8_t> ChunkDecompressed(0x40000);
 		int actualSize = oo2coreInstance->Decompress(ChunkCompressed.data(), ChunkCompressed.size(), ChunkDecompressed.data(), ChunkDecompressed.size());
 		ChunkDecompressed.resize(actualSize);
 
 		if (!FlagBaseGame)
 		{
-			chunkDecrypter.DecryptChunk(ChunkDecompressed, chunkNum);
+			chunkDecrypter.DecryptChunk(ChunkDecompressed.data(), actualSize, chunkNum);
 		}
 
 		return ChunkDecompressed;
@@ -240,7 +241,7 @@ std::vector<uint8_t> ChunkOTF::getDecompressedChunk(int64_t offset, int64_t size
 		reader.read(reinterpret_cast<char*>(ChunkDecompressed.data()), ChunkDecompressed.size());
 		if (!FlagBaseGame)
 		{
-			chunkDecrypter.DecryptChunk(ChunkDecompressed, chunkNum);
+			chunkDecrypter.DecryptChunk(ChunkDecompressed.data(), ChunkDecompressed.size(), chunkNum);
 		}
 		return ChunkDecompressed;
 	}

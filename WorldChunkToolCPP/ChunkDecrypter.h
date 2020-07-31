@@ -10,7 +10,7 @@ class ChunkDecrypter
 {
 public:
 	ChunkDecrypter(const std::string& chunkKeyPatternFilePath=CHUNK_KEY_SEQUENCE_FILE_NAME);
-	void DecryptChunk(std::vector<uint8_t>& data, const int dictionaryCount) const;
+	void DecryptChunk(uint8_t* data, const int length, const int dictionaryCount) const;
 private:
 	std::vector<uint8_t> chunkKeyPattern;
 	std::vector<std::vector<uint8_t>> chunkKeys;
