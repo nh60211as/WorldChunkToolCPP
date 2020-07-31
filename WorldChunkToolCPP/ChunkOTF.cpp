@@ -37,7 +37,6 @@ std::list<std::shared_ptr<FileNode>> ChunkOTF::AnalyzeChunk(const std::string& F
 	int ChunkPadding = std::to_string(ChunkCount).size();
 
 	double DiskSpace = (int64_t)ChunkCount * (int64_t)0x40000 * 1e-9;
-	// TODO: actually parse the string
 	Utils::Print(std::to_string(ChunkCount) + " subchunks detected. Requires at least: " + std::to_string(std::round(DiskSpace * 100) / 100) + " GB.", PRINT_ORDER::AFTER);
 
 	// Read file list
@@ -357,7 +356,7 @@ int ChunkOTF::ExtractSelected(std::list<std::shared_ptr<FileNode>>& itemlist, st
 			{
 				std::cout << "Extracting " << node->EntireName << " ...                          \r";
 				//fs::create_directories(Utils::getUpperDirectory(BaseLocation + node->EntireName)); // ok seriously how did c# do it
-				std::ofstream writer(BaseLocation + node->EntireName, std::ios::binary);
+				std::ofstream writer(BaseLocation + node->EntireName, std::ios::out | std::ios::binary);
 				std::vector<uint8_t> temp(size);
 				CurNodeChunk->getOnLength(temp.size(), temp.data(), 0, FlagBaseGame);
 				writer.write(reinterpret_cast<char*> (temp.data()), temp.size());

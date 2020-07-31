@@ -10,13 +10,14 @@
 #include "Utils.h"
 #include "Chunk.h"
 #include "ChunkOTF.h"
+#include "ChunkDecrypter.h"
 
 namespace fs = std::filesystem;
 
 int printHelpInfo();
 
 void setFlag(const std::vector<std::string>& args, const std::string& argument, bool& flag, const std::string& printMessage);
-int ProcessFile(const std::string& FileInput, const flags currentFlag, const std::shared_ptr<oo2core_loader> & oo2coreInstance);
+int ProcessFile(const std::string& FileInput, const flags currentFlag, const std::shared_ptr<oo2core_loader>& oo2coreInstance);
 
 
 // current testing argument: "C:/SteamLibrary/steamapps/common/Monster Hunter World/chunk/chunkG4.bin" -UnpackAll -AutoConfirm
@@ -31,12 +32,12 @@ int main(int argc, char* argv[])
 		std::cout << "Big endian machine is not supported now." << std::endl;
 		return 0;
 	}
-	
+
 	std::vector<std::string> missingFileList = Utils::fetchMissingFileList();
 	if (!missingFileList.empty())
 	{
-		for(const std::string & missingFile:missingFileList)
-		std::cout << "Needed file " << missingFile << " missing." << std::endl;
+		for (const std::string& missingFile : missingFileList)
+			std::cout << "Needed file " << missingFile << " missing." << std::endl;
 		return 0;
 	}
 
@@ -64,7 +65,7 @@ int main(int argc, char* argv[])
 		return 2;
 	}
 
-
+	ChunkDecrypter chunkDecrypter; // make sure its static member is initialized
 
 	std::string FileInput(argv[1]);
 	flags currentFlag{}; // is this some C++17 initialization I have to do for every default constructor?
@@ -135,7 +136,7 @@ void setFlag(const std::vector<std::string>& args, const std::string& argument, 
 	}
 }
 
-int ProcessFile(const std::string& FileInput, const flags currentFlag, const std::shared_ptr<oo2core_loader> & oo2coreInstance)
+int ProcessFile(const std::string& FileInput, const flags currentFlag, const std::shared_ptr<oo2core_loader>& oo2coreInstance)
 {
 	// this is processed by main()
 	if (!fs::exists(FileInput))
@@ -152,8 +153,7 @@ int ProcessFile(const std::string& FileInput, const flags currentFlag, const std
 		// Build PKG
 		if (currentFlag.FlagBuildPkg)
 		{
-			// TODO
-			Chunk::DecompressChunks(FileInput, currentFlag);
+			Chunk::DecompressChunks(FileInput, currentFlag, oo2coreInstance);
 		}
 		else
 		{

@@ -3,15 +3,17 @@
 #include <fstream>
 #include <filesystem>
 #include <map>
+#include <array>
 
 #include "Utils.h"
+#include "ChunkDecrypter.h"
 
 namespace fs = std::filesystem;
 
-void Chunk::DecompressChunks(const std::string& FileInput, const flags currentFlag)
+void Chunk::DecompressChunks(const std::string& FileInput, const flags currentFlag, std::shared_ptr<oo2core_loader> oo2coreInstance)
 {
     std::string NamePKG = fs::path(FileInput).replace_extension(".pkg").string(); // finally something good out of C++17
-    std::ifstream Reader(FileInput, std::ios::binary);
+    std::ifstream Reader(FileInput, std::ios::in | std::ios::binary);
 
     // Key = ChunkOffset, Value = ChunkSize
     // C# Dictionary is implemented as a hash table
@@ -28,76 +30,80 @@ void Chunk::DecompressChunks(const std::string& FileInput, const flags currentFl
     int ChunkPadding = std::to_string(ChunkCount).size();
 
     double DiskSpace = (int64_t)ChunkCount * (int64_t)0x40000 * 1e-9;
-
-    // TODO: actually parse the string
-    Utils::Print("{ChunkCount} chunks in this file. Requires at least: {Math.Round(DiskSpace, 2)} GB.", PRINT_ORDER::AFTER);
+    Utils::Print(std::to_string(ChunkCount) + " subchunks detected. Requires at least: " + std::to_string(std::round(DiskSpace * 100) / 100) + " GB.", PRINT_ORDER::AFTER);
 
     // Read file list
     int64_t totalChunkSize = 0;
+    std::array<uint8_t, 8> ArrayChunkSize = { 1,1,1,0,0,0,0,0 }; // zero initialize the array. Is there a better way?
+    std::array<uint8_t, 8> ArrayChunkOffset = { 1,1,1,1,1,0,0,0 }; // the ones are just a note to me that they will be modified
     for (int i = 0; i < ChunkCount; i++)
     {
         // Process file size
-        uint8_t ArrayTmp1[8];
         //byte[] ArrayChunkSize = Reader.ReadBytes(3);
-        uint8_t ArrayChunkSize[3];
-        Reader.read(reinterpret_cast<char*>(&ArrayChunkSize), sizeof(ArrayChunkSize));
+        Reader.read(reinterpret_cast<char*>(ArrayChunkSize.data()), 3); // read 3 bytes
 
         //int Low = ArrayChunkSize[0] & 0x0F;
 
         //int High = ArrayChunkSize[0] >> 4;
         //ArrayChunkSize[0] = BitConverter.GetBytes(High)[0];
-        ArrayChunkSize[0] = *(uint8_t*)(ArrayChunkSize[0] >> 4u); // does the endianess need a check
+        ArrayChunkSize[0] = (ArrayChunkSize[0] >> 4);
         //Array.Copy(ArrayChunkSize, ArrayTmp1, ArrayChunkSize.Length);
-        std::copy(std::begin(ArrayChunkSize), std::end(ArrayChunkSize), std::begin(ArrayTmp1));
         //long ChunkSize = BitConverter.ToInt64(ArrayTmp1, 0); // why are C# examples so over-engineered
-        int64_t ChunkSize = *(int64_t*)(ArrayTmp1[0]);
+        int64_t ChunkSize = *(int64_t*)(ArrayChunkSize.data()); // type punning. I only know it probably works on GCC.
         ChunkSize = (ChunkSize >> 4) + (ChunkSize & 0xF);
         totalChunkSize += ChunkSize;
 
         // Process offset
-        uint8_t ArrayTmp2[8];
         //byte[] ArrayChunkOffset = Reader.ReadBytes(5);
-        uint8_t ArrayChunkOffset[5];
-        Reader.read(reinterpret_cast<char*>(&ArrayChunkOffset), sizeof(ArrayChunkOffset));
+        Reader.read(reinterpret_cast<char*>(ArrayChunkOffset.data()), 5); // read 5 bytes
         //Array.Copy(ArrayChunkOffset, ArrayTmp2, ArrayChunkOffset.Length);
-        std::copy(std::begin(ArrayChunkOffset), std::end(ArrayChunkOffset), std::begin(ArrayTmp2));
         //long ChunkOffset = BitConverter.ToInt64(ArrayTmp2, 0);
-        int64_t ChunkOffset = *(int64_t*)(ArrayTmp2[0]);
+        int64_t ChunkOffset = *(int64_t*)(ArrayChunkOffset.data());
 
         MetaChunk.emplace(ChunkOffset, ChunkSize);
     }
 
     // Write decompressed chunks to pkg
     //BinaryWriter Writer = new BinaryWriter(File.Create(NamePKG));
-    //int DictCount = 1;
+    std::ofstream Writer(NamePKG, std::ios::out | std::ios::binary);
 
-    //foreach(KeyValuePair<long, long> Entry in MetaChunk)
-    //{
-    //    Console.Write($"\rProcessing {DictCount.ToString().PadLeft(ChunkPadding)} / {ChunkCount}...");
-    //    if (Entry.Value != 0)
-    //    {
-    //        Reader.BaseStream.Seek(Entry.Key, SeekOrigin.Begin);
-    //        byte[] ChunkCompressed = Reader.ReadBytes((int)Entry.Value); // Unsafe cast
-    //        byte[] ChunkDecompressed = Utils.Decompress(ChunkCompressed, ChunkCompressed.Length, 0x40000);
-    //        if (!FlagBaseGame) { Utils.DecryptChunk(ChunkDecompressed, Utils.GetChunkKey(DictCount - 1)); }
-    //        Writer.Write(ChunkDecompressed);
-    //    }
-    //    else
-    //    {
-    //        Reader.BaseStream.Seek(Entry.Key, SeekOrigin.Begin);
-    //        byte[] ChunkDecompressed = Reader.ReadBytes(0x40000);
-    //        if (!FlagBaseGame) { Utils.DecryptChunk(ChunkDecompressed, Utils.GetChunkKey(DictCount - 1)); }
-    //        Writer.Write(ChunkDecompressed);
-    //    }
-    //    DictCount++;
-    //}
-    //Reader.Close();
-    //Writer.Close();
+    int DictCount = 1;
 
-    //Utils.Print("Finished.", true);
-    //Utils.Print($"Output at: {NamePKG}", false);
+    
+    for(const std::pair<int64_t, int64_t> & Entry : MetaChunk)
+    {
+        int64_t Key = Entry.first;
+        int64_t Value = Entry.second;
+        std::vector<uint8_t> ChunkDecompressed(0x40000);
+
+        std::cout << "\rProcessing " << DictCount << "/" << ChunkCount << std::endl;
+        if (Value != 0)
+        {
+            Reader.seekg(Key, std::ios_base::beg); // skipping the MagicChunk of size int
+            std::vector<uint8_t> ChunkCompressed(Value);
+            Reader.read(reinterpret_cast<char*>(ChunkCompressed.data()), Value);
+            // nothing more i can do here
+            int actualSize = oo2coreInstance->Decompress(ChunkCompressed.data(), ChunkCompressed.size(), ChunkDecompressed.data(), ChunkDecompressed.size());
+            ChunkDecompressed.resize(actualSize);
+        }
+        else
+        {
+            Reader.seekg(Key, std::ios_base::beg);
+            Reader.read(reinterpret_cast<char*>(ChunkDecompressed.data()), ChunkDecompressed.size());
+        }
+        if (!currentFlag.FlagBaseGame)
+            ChunkDecrypter::DecryptChunk(ChunkDecompressed.data(), ChunkDecompressed.size(), DictCount - 1);
+
+        Writer.write(reinterpret_cast<char*> (ChunkDecompressed.data()), ChunkDecompressed.size());
+        DictCount++;
+    }
+    Reader.close();
+    Writer.close();
+
+    Utils::Print("Finished.", PRINT_ORDER::AFTER);
+    Utils::Print("Output at: " + NamePKG, PRINT_ORDER::BEFORE);
 
     //// Write csv
-    //Utils.Print("Writing file list.", false);
+    Utils::Print("Writing file list.", PRINT_ORDER::AFTER);
     //PKG.ExtractPKG(NamePKG, FlagAutoConfirm, FlagUnpackAll, true);
 }

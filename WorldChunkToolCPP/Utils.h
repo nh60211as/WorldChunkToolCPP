@@ -30,10 +30,10 @@ struct flags
 };
 
 // print order for Util::Print()
-enum class PRINT_ORDER
+enum class PRINT_ORDER : bool
 {
-	BEFORE,
-	AFTER
+	BEFORE = false,
+	AFTER = true
 };
 
 

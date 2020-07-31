@@ -1,4 +1,6 @@
 #include "ChunkDecrypter.h"
+std::vector<uint8_t> ChunkDecrypter::chunkKeyPattern = std::vector<uint8_t>();
+std::vector<std::vector<uint8_t>> ChunkDecrypter::chunkKeys = std::vector<std::vector<uint8_t>>();;
 
 #include <fstream>
 
@@ -49,7 +51,7 @@ ChunkDecrypter::ChunkDecrypter(const std::string& chunkKeyPatternFilePath)
 
 
 
-void ChunkDecrypter::DecryptChunk(uint8_t * data, const int length, const int dictionaryCount) const
+void ChunkDecrypter::DecryptChunk(uint8_t * data, const int length, const int dictionaryCount)
 {
 	int keyPos = chunkKeyPattern[dictionaryCount + 8];
 	const uint8_t * chunkKey = chunkKeys[keyPos].data(); // will it be optimized to take the reference
