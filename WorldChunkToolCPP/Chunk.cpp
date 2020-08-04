@@ -7,6 +7,7 @@
 
 #include "Utils.h"
 #include "ChunkDecrypter.h"
+#include "PKG.h"
 
 namespace fs = std::filesystem;
 
@@ -23,7 +24,7 @@ void Chunk::DecompressChunks(const std::string& FileInput, const flags currentFl
 
     // Read header
     //Reader.BaseStream.Seek(4, SeekOrigin.Begin);
-    Reader.seekg(4, std::ios_base::beg); // skipping the MagicChunk of size int
+    Reader.seekg(4, std::ios::beg); // skipping the MagicChunk of size int
     //int ChunkCount = Reader.ReadInt32(); int ChunkPadding = ChunkCount.ToString().Length;
     int ChunkCount;
     Reader.read(reinterpret_cast<char*>(&ChunkCount), sizeof(ChunkCount));
@@ -105,5 +106,5 @@ void Chunk::DecompressChunks(const std::string& FileInput, const flags currentFl
 
     //// Write csv
     Utils::Print("Writing file list.", PRINT_ORDER::AFTER);
-    //PKG.ExtractPKG(NamePKG, FlagAutoConfirm, FlagUnpackAll, true);
+    PKG::ExtractPKG(NamePKG, currentFlag.FlagAutoConfirm, currentFlag.FlagUnpackAll, true);
 }

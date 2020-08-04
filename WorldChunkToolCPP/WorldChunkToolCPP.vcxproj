@@ -153,6 +153,7 @@
     <ClCompile Include="ChunkOTF.cpp" />
     <ClCompile Include="FileNode.cpp" />
     <ClCompile Include="oo2core_loader.cpp" />
+    <ClCompile Include="PKG.cpp" />
     <ClCompile Include="WorldChunkToolCPP.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -161,6 +162,7 @@
     <ClInclude Include="ChunkOTF.h" />
     <ClInclude Include="FileNode.h" />
     <ClInclude Include="oo2core_loader.h" />
+    <ClInclude Include="PKG.h" />
     <ClInclude Include="Utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

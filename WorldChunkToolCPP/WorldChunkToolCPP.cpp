@@ -11,6 +11,7 @@
 #include "Chunk.h"
 #include "ChunkOTF.h"
 #include "ChunkDecrypter.h"
+#include "PKG.h"
 
 namespace fs = std::filesystem;
 
@@ -178,7 +179,7 @@ int ProcessFile(const std::string& FileInput, const flags currentFlag, const std
 	{
 		std::cout << "PKG file detected.\n";
 		// TODO:
-		//PKG.ExtractPKG(FileInput, FlagAutoConfirm, FlagUnpackAll, false);
+		PKG::ExtractPKG(FileInput, currentFlag.FlagAutoConfirm, currentFlag.FlagUnpackAll, false);
 		Utils::pause(currentFlag.FlagAutoConfirm);
 		return 0;
 	}

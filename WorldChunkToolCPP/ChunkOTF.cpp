@@ -26,7 +26,7 @@ std::list<std::shared_ptr<FileNode>> ChunkOTF::AnalyzeChunk(const std::string& F
 	MetaChunk = std::map<int64_t, int64_t>();
 	ChunkOffsetDict = std::map<int, int64_t>();
 	std::string NamePKG = fs::path(FileInput).replace_extension(".pkg").string(); // finally something good out of C++17
-	Reader = std::ifstream(FileInput, std::ios::in | std::ios::binary); // ios::in must be added or it will read wrong result like how???
+	Reader = std::ifstream(FileInput, std::ios::in | std::ios::binary);
 
 	// Read header
 	Reader.seekg(4, std::ios_base::beg); // skipping the MagicChunk of size int
