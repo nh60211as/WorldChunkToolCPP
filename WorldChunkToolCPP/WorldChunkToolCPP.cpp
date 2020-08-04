@@ -164,6 +164,8 @@ int ProcessFile(const std::string& FileInput, const flags currentFlag, const std
 			if (currentFlag.FlagUnpackAll)
 				FilePath = fs::current_path().string() + "\\chunk_combined";
 			FileCatalog = ChunkOtfInst.AnalyzeChunk(FileInput, FileCatalog, currentFlag.FlagBaseGame);
+			std::cout << "Creating folders, please wait.\n";
+			ChunkOtfInst.createSelectedFolder(FileCatalog, FilePath);
 			std::cout << "Extracting chunk file, please wait.\n";
 			ChunkOtfInst.ExtractSelected(FileCatalog, FilePath, currentFlag.FlagBaseGame);
 			Utils::Print("\nFinished.", PRINT_ORDER::AFTER);

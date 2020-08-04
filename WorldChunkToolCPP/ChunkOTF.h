@@ -16,7 +16,8 @@ class ChunkOTF
 public:
 	ChunkOTF(std::shared_ptr<oo2core_loader> oo2coreInstance_);
 	std::list<std::shared_ptr<FileNode>> AnalyzeChunk(const std::string& FileInput, std::list<std::shared_ptr<FileNode>> & inputFileList, bool FlagBaseGame);
-    int ExtractSelected(std::list<std::shared_ptr<FileNode>> & itemlist, std::string BaseLocation, bool FlagBaseGame);
+	void createSelectedFolder(const std::list<std::shared_ptr<FileNode>>& itemlist, const std::string& BaseLocation);
+    int ExtractSelected(std::list<std::shared_ptr<FileNode>> & itemlist, const std::string& BaseLocation, bool FlagBaseGame);
 private:
 	std::map<int64_t, int64_t> MetaChunk;
 	std::map<int, int64_t> ChunkOffsetDict;

@@ -295,7 +295,7 @@ void ChunkOTF::getOnLength(int64_t targetlength, uint8_t* tmpPtr, int64_t startA
 	}
 }
 
-int ChunkOTF::ExtractSelected(std::list<std::shared_ptr<FileNode>>& itemlist, std::string BaseLocation, bool FlagBaseGame)
+int ChunkOTF::ExtractSelected(std::list<std::shared_ptr<FileNode>>& itemlist, const std::string & BaseLocation, bool FlagBaseGame)
 {
 	int failed = 0;
 	for (const std::shared_ptr<FileNode>& node : itemlist)
@@ -344,12 +344,12 @@ int ChunkOTF::ExtractSelected(std::list<std::shared_ptr<FileNode>>& itemlist, st
 				else { CurNodeChunk->NextChunkDecompressed.clear(); }
 				CurNodeChunk->ChunkCache.emplace(CurNodeChunk->cur_index + 1, CurNodeChunk->NextChunkDecompressed);
 			}
-			if (!node->IsFile)
-				fs::create_directories(BaseLocation + node->EntireName + "\\");
-			else
-			{
-				fs::create_directories(Utils::getUpperDirectory(BaseLocation + node->EntireName)); // ok seriously how did c# do it
-			}
+			//if (!node->IsFile)
+			//	fs::create_directories(BaseLocation + node->EntireName + "\\");
+			//else
+			//{
+			//	fs::create_directories(Utils::getUpperDirectory(BaseLocation + node->EntireName)); // ok seriously how did c# do it
+			//}
 			// what does this part mean???
 			if (node->IsFile)
 			{
@@ -364,4 +364,20 @@ int ChunkOTF::ExtractSelected(std::list<std::shared_ptr<FileNode>>& itemlist, st
 		}
 	}
 	return failed;
+}
+
+void ChunkOTF::createSelectedFolder(const std::list<std::shared_ptr<FileNode>>& itemlist, const std::string& BaseLocation)
+{
+	for (const std::shared_ptr<FileNode>& node : itemlist)
+	{
+		if (!node->Childern.empty())
+			createSelectedFolder(node->Childern, BaseLocation);
+		else if (node->IsSelected())
+		{
+			if (!node->IsFile)
+				fs::create_directories(BaseLocation + node->EntireName + "\\");
+			else
+				fs::create_directories(Utils::getUpperDirectory(BaseLocation + node->EntireName)); // ok seriously how did c# do it
+		}
+	}
 }
