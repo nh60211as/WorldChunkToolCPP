@@ -10,7 +10,6 @@ namespace fs = std::filesystem;
 
 ChunkOTF::ChunkOTF(std::shared_ptr<oo2core_loader> oo2coreInstance_) :
 	oo2coreInstance(oo2coreInstance_),
-	chunkDecrypter(),
 	DictCount(0),
 	cur_index(0),
 	cur_pointer(0)
@@ -233,7 +232,7 @@ std::vector<uint8_t> ChunkOTF::getDecompressedChunk(int64_t offset, int64_t size
 	}
 
 	if (!FlagBaseGame)
-		chunkDecrypter.DecryptChunk(ChunkDecompressed_.data(), ChunkDecompressed_.size(), chunkNum);
+		ChunkDecrypter::DecryptChunk(ChunkDecompressed_.data(), ChunkDecompressed_.size(), chunkNum);
 
 	return ChunkDecompressed_;
 }
