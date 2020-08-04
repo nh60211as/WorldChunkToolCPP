@@ -64,13 +64,13 @@ namespace Utils
 	{
 		if (order == PRINT_ORDER::AFTER)
 		{
-			std::cout << Input << std::endl;
-			std::cout << "==============================" << std::endl;
+			std::cout << Input << "\n";
+			std::cout << "==============================\n";
 		}
 		else
 		{
-			std::cout << "\n==============================" << std::endl;
-			std::cout << Input << std::endl;
+			std::cout << "\n==============================\n";
+			std::cout << Input << "\n";
 		}
 	}
 

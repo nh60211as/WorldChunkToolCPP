@@ -23,13 +23,14 @@ int ProcessFile(const std::string& FileInput, const flags currentFlag, const std
 // current testing argument: "C:/SteamLibrary/steamapps/common/Monster Hunter World/chunk/chunkG4.bin" -UnpackAll -AutoConfirm
 int main(int argc, char* argv[])
 {
-	std::cout << "==============================" << std::endl;
+	std::ios::sync_with_stdio(false);
+	std::cout << "==============================\n";
 	Utils::Print("WorldChunkTool v1.2.2 by MHVuze", PRINT_ORDER::AFTER);
 	Utils::Print("C++ implementation by nh60211as", PRINT_ORDER::AFTER);
 
 	if (Utils::IsBigEndian())
 	{
-		std::cout << "Big endian machine is not supported now." << std::endl;
+		std::cout << "Big endian machine is not supported now.\n";
 		return 0;
 	}
 
@@ -37,7 +38,7 @@ int main(int argc, char* argv[])
 	if (!missingFileList.empty())
 	{
 		for (const std::string& missingFile : missingFileList)
-			std::cout << "Needed file " << missingFile << " missing." << std::endl;
+			std::cout << "Needed file " << missingFile << " missing.\n";
 		return 0;
 	}
 
@@ -51,17 +52,17 @@ int main(int argc, char* argv[])
 	std::shared_ptr<oo2core_loader> oo2coreInstance = std::make_shared<oo2core_loader>();
 	if (!oo2coreInstance) // if the library is not loaded
 	{
-		std::cout << OO2CORE_FILE_NAME << " not found." << std::endl;
-		std::cout << "Place it at the same folder as WorldChunkTool.exe." << std::endl;
+		std::cout << OO2CORE_FILE_NAME << " not found.\n";
+		std::cout << "Place it at the same folder as WorldChunkTool.exe.\n";
 		return 2;
 	}
 
 	if (!oo2coreInstance->is_oo2core_8_win64_legit())
 	{
-		std::cout << OO2CORE_FILE_NAME << " is not legit." << std::endl;
-		std::cout << "Download the file from Warframe or something." << std::endl;
-		std::cout << "You can also check the hash of " << OO2CORE_FILE_NAME << ": " << std::endl;
-		std::cout << "SHA256: " << oo2coreSHA256 << std::endl;
+		std::cout << OO2CORE_FILE_NAME << " is not legit.\n";
+		std::cout << "Download the file from Warframe or something.\n";
+		std::cout << "You can also check the hash of " << OO2CORE_FILE_NAME << ": \n";
+		std::cout << "SHA256: " << oo2coreSHA256 << "\n";
 		return 2;
 	}
 
@@ -93,7 +94,7 @@ int main(int argc, char* argv[])
 		std::vector<std::string> ChunkFileList = Utils::sortFileByChunkName(FileInput, wordRegex);
 		for (const std::string ChunkFile : ChunkFileList)
 		{
-			std::cout << "Processing " << ChunkFile << "." << std::endl;
+			std::cout << "Processing " << ChunkFile << ".\n";
 			ProcessFile(ChunkFile, currentFlag, oo2coreInstance);
 		}
 	}
@@ -103,13 +104,13 @@ int main(int argc, char* argv[])
 	}
 	else
 	{
-		std::cout << "Input is not a file or did not specify -UnpackAll when input is a folder." << std::endl;
+		std::cout << "Input is not a file or did not specify -UnpackAll when input is a folder.\n";
 		return 0;
 	}
 
 	if (currentFlag.FlagUnpackAll)
 	{
-		std::cout << "Output at: " << fs::current_path().string() << "\\chunk_combined" << std::endl;
+		std::cout << "Output at: " << fs::current_path().string() << "\\chunk_combined\n";
 		Utils::pause(currentFlag.FlagAutoConfirm);
 	}
 
@@ -118,12 +119,12 @@ int main(int argc, char* argv[])
 
 int printHelpInfo()
 {
-	std::cout << "Usage: \tWorldChunkTool <chunk*_file|PKG_file|chunk*_dir> (options)\n" << std::endl;
-	std::cout << "Options:" << std::endl;
-	std::cout << "\t-UnpackAll: Unpack all chunk*.bin files in the provided directory into a single folder." << std::endl;
-	std::cout << "\t-AutoConfirm: No confirmations required." << std::endl;
-	std::cout << "\t-BuildPKG: Build PKG file from chunks and create data sheet. No extraction. For research purposes only." << std::endl;
-	std::cout << "\t-BaseGame: Switch to legacy mode for MH:W base game chunks (pre-IB update)." << std::endl;
+	std::cout << "Usage: \tWorldChunkTool <chunk*_file|PKG_file|chunk*_dir> (options)\n\n";
+	std::cout << "Options:\n";
+	std::cout << "\t-UnpackAll: Unpack all chunk*.bin files in the provided directory into a single folder.\n";
+	std::cout << "\t-AutoConfirm: No confirmations required.\n";
+	std::cout << "\t-BuildPKG: Build PKG file from chunks and create data sheet. No extraction. For research purposes only.\n";
+	std::cout << "\t-BaseGame: Switch to legacy mode for MH:W base game chunks (pre-IB update).\n";
 	return 0;
 }
 
@@ -141,14 +142,14 @@ int ProcessFile(const std::string& FileInput, const flags currentFlag, const std
 	// this is processed by main()
 	if (!fs::exists(FileInput))
 	{
-		std::cout << "ERROR: Specified file doesn't exist." << std::endl;
+		std::cout << "ERROR: Specified file doesn't exist.\n";
 		return 1;
 	}
 
 	int MagicInputFile = Utils::getFileMagicNumber(FileInput);
 	if (MagicInputFile == MagicChunk)
 	{
-		std::cout << "Chunk file detected." << std::endl;
+		std::cout << "Chunk file detected.\n";
 
 		// Build PKG
 		if (currentFlag.FlagBuildPkg)
@@ -163,7 +164,7 @@ int ProcessFile(const std::string& FileInput, const flags currentFlag, const std
 			if (currentFlag.FlagUnpackAll)
 				FilePath = fs::current_path().string() + "\\chunk_combined";
 			FileCatalog = ChunkOtfInst.AnalyzeChunk(FileInput, FileCatalog, currentFlag.FlagBaseGame);
-			std::cout << "Extracting chunk file, please wait." << std::endl;
+			std::cout << "Extracting chunk file, please wait.\n";
 			ChunkOtfInst.ExtractSelected(FileCatalog, FilePath, currentFlag.FlagBaseGame);
 			Utils::Print("\nFinished.", PRINT_ORDER::AFTER);
 			if (!currentFlag.FlagUnpackAll) { Utils::Print("Output at: " + FilePath, PRINT_ORDER::AFTER); }
@@ -173,7 +174,7 @@ int ProcessFile(const std::string& FileInput, const flags currentFlag, const std
 	}
 	else if (MagicInputFile == MagicPKG)
 	{
-		std::cout << "PKG file detected." << std::endl;
+		std::cout << "PKG file detected.\n";
 		// TODO:
 		//PKG.ExtractPKG(FileInput, FlagAutoConfirm, FlagUnpackAll, false);
 		Utils::pause(currentFlag.FlagAutoConfirm);
@@ -181,7 +182,7 @@ int ProcessFile(const std::string& FileInput, const flags currentFlag, const std
 	}
 	else
 	{
-		std::cout << "ERROR: Invalid magic " << std::hex << MagicInputFile << "." << std::endl;
+		std::cout << "ERROR: Invalid magic " << std::hex << MagicInputFile << ".\n";
 		Utils::pause(currentFlag.FlagAutoConfirm);
 		return 0;
 	}

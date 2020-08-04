@@ -76,7 +76,7 @@ void Chunk::DecompressChunks(const std::string& FileInput, const flags currentFl
         int64_t Value = Entry.second;
         std::vector<uint8_t> ChunkDecompressed(0x40000);
 
-        std::cout << "\rProcessing " << DictCount << "/" << ChunkCount << std::endl;
+        std::cout << "\rProcessing " << DictCount << "/" << ChunkCount << "\n";
         if (Value != 0)
         {
             Reader.seekg(Key, std::ios_base::beg); // skipping the MagicChunk of size int
