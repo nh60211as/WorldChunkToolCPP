@@ -53,36 +53,36 @@ ChunkDecrypter::ChunkDecrypter(const std::string& chunkKeyPatternFilePath)
 
 void ChunkDecrypter::DecryptChunk(uint8_t* data, const int length, const int dictionaryCount)
 {
-	int keyPos = chunkKeyPattern[dictionaryCount + 8];
+	int keyPos = chunkKeyPattern[(dictionaryCount + 8)];
 	const uint8_t* chunkKey = chunkKeys[keyPos].data(); // will it be optimized to take the reference
 
-	//for (int i = 0; i < length; i++)
-	//{
-	//	//data[i] = (chunkKey[i % chunkKey.size()] ^ data[i]);
-	//	//data[i] = (chunkKey[i % 16] ^ data[i]); // it's fixed size
-	//}
-	int i = 0;
-	for (; i < (length/16)*16; i += 16)
+	for (int i = 0; i < length; i++)
 	{
-		data[i + 0] ^= chunkKey[0];
-		data[i + 1] ^= chunkKey[1];
-		data[i + 2] ^= chunkKey[2];
-		data[i + 3] ^= chunkKey[3];
-		data[i + 4] ^= chunkKey[4];
-		data[i + 5] ^= chunkKey[5];
-		data[i + 6] ^= chunkKey[6];
-		data[i + 7] ^= chunkKey[7];
-		data[i + 8] ^= chunkKey[8];
-		data[i + 9] ^= chunkKey[9];
-		data[i + 10] ^= chunkKey[10];
-		data[i + 11] ^= chunkKey[11];
-		data[i + 12] ^= chunkKey[12];
-		data[i + 13] ^= chunkKey[13];
-		data[i + 14] ^= chunkKey[14];
-		data[i + 15] ^= chunkKey[15];
+		//data[i] = (chunkKey[i % chunkKey.size()] ^ data[i]);
+		data[i] = (chunkKey[i % 16] ^ data[i]); // it's fixed size
 	}
+	//int i = 0;
+	//for (; i < (length/16)*16; i += 16)
+	//{
+	//	data[i + 0] ^= chunkKey[0];
+	//	data[i + 1] ^= chunkKey[1];
+	//	data[i + 2] ^= chunkKey[2];
+	//	data[i + 3] ^= chunkKey[3];
+	//	data[i + 4] ^= chunkKey[4];
+	//	data[i + 5] ^= chunkKey[5];
+	//	data[i + 6] ^= chunkKey[6];
+	//	data[i + 7] ^= chunkKey[7];
+	//	data[i + 8] ^= chunkKey[8];
+	//	data[i + 9] ^= chunkKey[9];
+	//	data[i + 10] ^= chunkKey[10];
+	//	data[i + 11] ^= chunkKey[11];
+	//	data[i + 12] ^= chunkKey[12];
+	//	data[i + 13] ^= chunkKey[13];
+	//	data[i + 14] ^= chunkKey[14];
+	//	data[i + 15] ^= chunkKey[15];
+	//}
 
-	// residual
-	for(;i<length;i++)
-		data[i] ^= chunkKey[i%16];
+	//// residual
+	//for(;i<length;i++)
+	//	data[i] ^= chunkKey[i%16];
 }
