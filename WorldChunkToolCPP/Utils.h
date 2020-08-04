@@ -168,6 +168,26 @@ namespace Utils
 			std::cin.get();
 		}
 	}
+
+	static std::string stringRemove(const std::string & input, const char target, bool isLast)
+	{
+		std::string output = input;
+
+		// I don't even know if this will work
+		if (isLast)
+		{
+			std::string::const_reverse_iterator stringEnd = std::find(input.rbegin(), input.rend(), target);
+			size_t endOfString = std::distance(stringEnd, input.rend());
+			output.erase(output.begin() + endOfString + 1, output.end());
+		}
+		else
+		{
+			std::string::const_iterator stringEnd = std::find(input.begin(), input.end(), target);
+			output.erase(stringEnd + 1, output.end());
+		}
+
+		return output;
+	}
 };
 
 #endif

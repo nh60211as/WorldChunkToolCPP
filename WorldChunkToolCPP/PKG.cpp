@@ -2,6 +2,8 @@
 
 #include <filesystem>
 #include <fstream>
+#include <sstream>
+#include <iterator>
 
 #include "Utils.h"
 
@@ -17,11 +19,11 @@ void PKG::ExtractPKG(const std::string& FileInput, bool FlagAutoConfirm, bool Fl
 
     Reader.seekg(0x0C, std::ios::beg);
 
-    int TotalParentCount;
-    Reader.read(reinterpret_cast<char*>(TotalParentCount),sizeof(TotalParentCount));
+    int TotalParentCount = 0;
+    Reader.read(reinterpret_cast<char*>(&TotalParentCount),sizeof(TotalParentCount));
     int ParentPadding = std::to_string(TotalParentCount).size();
-    int TotalChildrenCount;
-    Reader.read(reinterpret_cast<char*>(TotalChildrenCount), sizeof(TotalChildrenCount));
+    int TotalChildrenCount = 0;
+    Reader.read(reinterpret_cast<char*>(&TotalChildrenCount), sizeof(TotalChildrenCount));
     if (!OnlyLog) 
         Utils::Print("PKG file has " + std::to_string(TotalParentCount) + " parent entries with " + std::to_string(TotalChildrenCount) + " children entries.", PRINT_ORDER::AFTER);
 
@@ -34,14 +36,14 @@ void PKG::ExtractPKG(const std::string& FileInput, bool FlagAutoConfirm, bool Fl
         //byte[] ArrayNameParent = Reader.ReadBytes(0x3C).Where(b = > b != 0x00).ToArray();
         std::string StringNameParent;
         Reader.seekg(0x3C, std::ios::cur);
-        int64_t FileSize;
-        int64_t FileOffset;
-        int EntryType;
-        int CountChildren;
-        Reader.read(reinterpret_cast<char*>(FileSize), sizeof(FileSize));
-        Reader.read(reinterpret_cast<char*>(FileOffset), sizeof(FileOffset));
-        Reader.read(reinterpret_cast<char*>(EntryType), sizeof(EntryType));
-        Reader.read(reinterpret_cast<char*>(CountChildren), sizeof(CountChildren));
+        int64_t FileSize = 0u;
+        int64_t FileOffset = 0u;
+        int EntryType = 0;
+        int CountChildren = 0;
+        Reader.read(reinterpret_cast<char*>(&FileSize), sizeof(FileSize));
+        Reader.read(reinterpret_cast<char*>(&FileOffset), sizeof(FileOffset));
+        Reader.read(reinterpret_cast<char*>(&EntryType), sizeof(EntryType));
+        Reader.read(reinterpret_cast<char*>(&CountChildren), sizeof(CountChildren));
 
         for (int j = 0; j < CountChildren; j++)
         {
@@ -60,11 +62,11 @@ void PKG::ExtractPKG(const std::string& FileInput, bool FlagAutoConfirm, bool Fl
             // basically the same thing
             ArrayNameChild.resize(std::distance(ArrayNameChild.begin(),std::find(ArrayNameChild.begin(), ArrayNameChild.end(), 0)));
             //byte[] ArrayNameChild = Reader.ReadBytes(0xA0).Where(b = > b != 0x00).ToArray();
-            int Unknown;
-            Reader.read(reinterpret_cast<char*>(FileSize), sizeof(FileSize));
-            Reader.read(reinterpret_cast<char*>(FileOffset), sizeof(FileOffset));
-            Reader.read(reinterpret_cast<char*>(EntryType), sizeof(EntryType));
-            Reader.read(reinterpret_cast<char*>(Unknown), sizeof(Unknown));
+            int Unknown = 0;
+            Reader.read(reinterpret_cast<char*>(&FileSize), sizeof(FileSize));
+            Reader.read(reinterpret_cast<char*>(&FileOffset), sizeof(FileOffset));
+            Reader.read(reinterpret_cast<char*>(&EntryType), sizeof(EntryType));
+            Reader.read(reinterpret_cast<char*>(&Unknown), sizeof(Unknown));
 
             // Proper up remapped files
             if (EntryType == 0x02)
@@ -100,16 +102,25 @@ void PKG::ExtractPKG(const std::string& FileInput, bool FlagAutoConfirm, bool Fl
             // Handle directory entries
             if (EntryType != 0x01)
             {
+                std::stringstream sstream;
+                sstream << std::setfill('0') << std::setw(16) << std::hex << FileOffset;
+
+                std::string::reverse_iterator stringEnd = std::find(StringNameParent.rbegin(), StringNameParent.rend(), '\\');
+                size_t lastIndex = std::distance(stringEnd, StringNameParent.rend());
+
+                std::string::iterator stringStart = std::find(StringNameParent.begin(), StringNameParent.end(), '.');
+                size_t firstIndex = std::distance(StringNameParent.begin(), stringStart);
+
                 LogWriter << 
                     i << ',' <<
-                    FileOffset.ToString("X16") << ',' <<
+                    sstream.str() << ',' <<
                     FileSize << ',' <<
                     EntryType << ',' <<
                     Unknown << ',' <<
                     StringNameParent << ',' <<
-                    StringNameParent.Remove(StringNameParent.LastIndexOf('\\') + 1) << ',' <<
-                    StringNameParent.Substring(StringNameParent.LastIndexOf('\\') + 1) << ',' <<
-                    StringNameParent.Substring(StringNameParent.IndexOf('.') + 1) << "\n";
+                    Utils::stringRemove(StringNameParent,'\\',true) << ',' <<
+                    StringNameParent.substr(lastIndex + 1) << ',' <<
+                    StringNameParent.substr(firstIndex + 1) << "\n";
             }
         }
     }
