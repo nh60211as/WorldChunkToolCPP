@@ -340,3 +340,6 @@ ASALocalRun/
 healthchecksdb
 /WorldChunkToolCPP/chunk_combined
 /WorldChunkToolCPP/oo2core_8_win64.dll
+/WorldChunkToolCPP/*.pkg
+/WorldChunkToolCPP/chunkG4.pkg
+/WorldChunkToolCPP/*.csv

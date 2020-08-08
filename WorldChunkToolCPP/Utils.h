@@ -178,7 +178,7 @@ namespace Utils
 		{
 			std::string::const_reverse_iterator stringEnd = std::find(input.rbegin(), input.rend(), target);
 			size_t endOfString = std::distance(stringEnd, input.rend());
-			output.erase(output.begin() + endOfString + 1, output.end());
+			output.erase(output.begin() + endOfString, output.end());
 		}
 		else
 		{

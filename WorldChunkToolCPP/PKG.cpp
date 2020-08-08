@@ -25,7 +25,7 @@ void PKG::ExtractPKG(const std::string& FileInput, bool FlagAutoConfirm, bool Fl
     int TotalChildrenCount = 0;
     Reader.read(reinterpret_cast<char*>(&TotalChildrenCount), sizeof(TotalChildrenCount));
     if (!OnlyLog) 
-        Utils::Print("PKG file has " + std::to_string(TotalParentCount) + " parent entries with " + std::to_string(TotalChildrenCount) + " children entries.", PRINT_ORDER::AFTER);
+        Utils::Print("PKG file has " + std::to_string(TotalParentCount) + " parent entries with " + std::to_string(TotalChildrenCount) + " children entries.", PRINT_ORDER::BEFORE);
 
     Reader.seekg(0x100, std::ios::beg);
     for (int i = 0; i < TotalParentCount; i++)
@@ -48,10 +48,10 @@ void PKG::ExtractPKG(const std::string& FileInput, bool FlagAutoConfirm, bool Fl
         for (int j = 0; j < CountChildren; j++)
         {
             if (!OnlyLog) 
-                std::cout << "\rParent entry " << std::left << std::setfill(' ') << std::setw(ParentPadding) << std::to_string(i + 1) <<
+                std::cout << "\rParent entry " << std::right << std::setfill(' ') << std::setw(ParentPadding) << std::to_string(i + 1) <<
                 "/" << std::to_string(TotalParentCount) << 
-                ". Processing child entry" << std::left << std::setfill(' ') << std::setw(4) << std::to_string(j + 1) <<  
-                "/" << std::left << std::setfill(' ') << std::setw(4) << std::to_string(CountChildren) << "...\n";
+                ". Processing child entry" << std::right << std::setfill(' ') << std::setw(4) << std::to_string(j + 1) <<
+                "/" << std::right << std::setfill(' ') << std::setw(4) << std::to_string(CountChildren) << "..." << std::flush;
 
             int64_t ReaderPositionSubFile = Reader.tellg();
             std::vector<uint8_t> ArrayNameChild(0xA0);
@@ -77,8 +77,7 @@ void PKG::ExtractPKG(const std::string& FileInput, bool FlagAutoConfirm, bool Fl
                 ArrayNameChild.resize(std::distance(ArrayNameChild.begin(), std::find(ArrayNameChild.begin(), ArrayNameChild.end(), 0)));
                 Reader.seekg(0x68, std::ios::cur);
             }
-            StringNameParent.reserve(ArrayNameChild.size());
-            StringNameParent.append(std::begin(ArrayNameChild), std::end(ArrayNameChild));
+            StringNameParent = std::string(std::begin(ArrayNameChild), std::end(ArrayNameChild));
 
             // Extract remapped and regular files
             if (EntryType == 0x02 || EntryType == 0x00)
@@ -103,7 +102,7 @@ void PKG::ExtractPKG(const std::string& FileInput, bool FlagAutoConfirm, bool Fl
             if (EntryType != 0x01)
             {
                 std::stringstream sstream;
-                sstream << std::setfill('0') << std::setw(16) << std::hex << FileOffset;
+                sstream << std::setfill('0') << std::setw(16) << std::hex << std::uppercase << FileOffset;
 
                 std::string::reverse_iterator stringEnd = std::find(StringNameParent.rbegin(), StringNameParent.rend(), '\\');
                 size_t lastIndex = std::distance(stringEnd, StringNameParent.rend());
@@ -119,7 +118,7 @@ void PKG::ExtractPKG(const std::string& FileInput, bool FlagAutoConfirm, bool Fl
                     Unknown << ',' <<
                     StringNameParent << ',' <<
                     Utils::stringRemove(StringNameParent,'\\',true) << ',' <<
-                    StringNameParent.substr(lastIndex + 1) << ',' <<
+                    StringNameParent.substr(lastIndex) << ',' <<
                     StringNameParent.substr(firstIndex + 1) << "\n";
             }
         }
