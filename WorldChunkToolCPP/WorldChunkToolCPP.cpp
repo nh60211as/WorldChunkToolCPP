@@ -21,7 +21,7 @@ void setFlag(const std::vector<std::string>& args, const std::string& argument, 
 int ProcessFile(const std::string& FileInput, const flags currentFlag, const std::shared_ptr<oo2core_loader>& oo2coreInstance);
 
 
-// current testing argument: "C:/SteamLibrary/steamapps/common/Monster Hunter World/chunk/chunkG4.bin" -BuildPKG -AutoConfirm
+// current testing argument: "C:/SteamLibrary/steamapps/common/Monster Hunter World/chunk/chunkG4.bin" -BuildPKG -AutoConfirm -UnpackAll
 int main(int argc, char* argv[])
 {
 	std::ios::sync_with_stdio(false);

@@ -295,7 +295,7 @@ void ChunkOTF::getOnLength(int64_t targetlength, uint8_t* tmpPtr, int64_t startA
 	}
 }
 
-int ChunkOTF::ExtractSelected(std::list<std::shared_ptr<FileNode>>& itemlist, const std::string & BaseLocation, bool FlagBaseGame)
+int ChunkOTF::ExtractSelected(std::list<std::shared_ptr<FileNode>>& itemlist, const std::string& BaseLocation, bool FlagBaseGame)
 {
 	int failed = 0;
 	for (const std::shared_ptr<FileNode>& node : itemlist)
@@ -322,7 +322,7 @@ int ChunkOTF::ExtractSelected(std::list<std::shared_ptr<FileNode>>& itemlist, co
 					CurNodeChunk->Reader,
 					FlagBaseGame,
 					CurNodeChunk->cur_index
-					);
+				);
 				CurNodeChunk->ChunkCache.emplace(CurNodeChunk->cur_index, CurNodeChunk->ChunkDecompressed);
 			}
 			if (CurNodeChunk->ChunkCache.find(CurNodeChunk->cur_index + 1) != CurNodeChunk->ChunkCache.end())
@@ -335,11 +335,11 @@ int ChunkOTF::ExtractSelected(std::list<std::shared_ptr<FileNode>>& itemlist, co
 				if (CurNodeChunk->cur_index + 1 < CurNodeChunk->DictCount)
 				{
 					CurNodeChunk->NextChunkDecompressed = CurNodeChunk->getDecompressedChunk(CurNodeChunk->ChunkOffsetDict[CurNodeChunk->cur_index + 1],
-							CurNodeChunk->MetaChunk[CurNodeChunk->ChunkOffsetDict[CurNodeChunk->cur_index + 1]],
-							CurNodeChunk->Reader,
-							FlagBaseGame,
-							CurNodeChunk->cur_index + 1
-							);
+						CurNodeChunk->MetaChunk[CurNodeChunk->ChunkOffsetDict[CurNodeChunk->cur_index + 1]],
+						CurNodeChunk->Reader,
+						FlagBaseGame,
+						CurNodeChunk->cur_index + 1
+					);
 				}
 				else { CurNodeChunk->NextChunkDecompressed.clear(); }
 				CurNodeChunk->ChunkCache.emplace(CurNodeChunk->cur_index + 1, CurNodeChunk->NextChunkDecompressed);
@@ -368,16 +368,29 @@ int ChunkOTF::ExtractSelected(std::list<std::shared_ptr<FileNode>>& itemlist, co
 
 void ChunkOTF::createSelectedFolder(const std::list<std::shared_ptr<FileNode>>& itemlist, const std::string& BaseLocation)
 {
+	createSelectedFolder(itemlist, fs::path(BaseLocation));
+}
+
+void ChunkOTF::createSelectedFolder(const std::list<std::shared_ptr<FileNode>>& itemlist, const std::filesystem::path& BaseLocation)
+{
 	for (const std::shared_ptr<FileNode>& node : itemlist)
 	{
 		if (!node->Childern.empty())
 			createSelectedFolder(node->Childern, BaseLocation);
 		else if (node->IsSelected())
 		{
+			fs::path BaseLocation__(BaseLocation);
+			BaseLocation__ += node->EntireName;
 			if (!node->IsFile)
-				fs::create_directories(BaseLocation + node->EntireName + "\\");
+			{
+				if (!fs::exists(BaseLocation__))
+					fs::create_directories(BaseLocation__);
+			}
 			else
-				fs::create_directories(Utils::getUpperDirectory(BaseLocation + node->EntireName)); // ok seriously how did c# do it
+			{
+				if (!fs::exists(BaseLocation__.parent_path()))
+					fs::create_directories(BaseLocation__.parent_path()); // ok seriously how did c# do it
+			}
 		}
 	}
 }
