@@ -41,15 +41,20 @@ enum class PRINT_ORDER : bool
 static constexpr int MagicChunk = 0x00504D43;
 static constexpr int MagicPKG = 0x20474B50;
 
+
+// all of the functions here are reported as C4505
+// https://docs.microsoft.com/en-us/cpp/error-messages/compiler-warnings/compiler-warning-level-4-c4505?view=vs-2019
+// is this because they are inlined to other functions?
+// add inline keyword fixed this issue
 namespace Utils
 {
-	static int IsBigEndian()
+	static inline int IsBigEndian()
 	{
 		int i = 1;
 		return !*((char*)&i);
 	}
 
-	static std::vector<std::string> fetchMissingFileList()
+	static inline std::vector<std::string> fetchMissingFileList()
 	{
 		std::vector<std::string> missingFileList;
 		if (!std::filesystem::exists(OO2CORE_FILE_NAME))
@@ -75,7 +80,7 @@ namespace Utils
 	}
 
 	// https://stackoverflow.com/questions/1488775/c-remove-new-line-from-multiline-string
-	static void sanitizeNewLine(std::string& str)
+	static inline void sanitizeNewLine(std::string& str)
 	{
 		str.erase(std::remove(str.begin(), str.end(), '\n'), str.end());
 	}
@@ -89,7 +94,7 @@ namespace Utils
 	}
 
 	// from https://thispointer.com/c-check-if-given-path-is-a-file-or-directory-using-boost-c17-filesystem-library/
-	static bool isDirectory(const std::string& filePath)
+	static inline bool isDirectory(const std::string& filePath)
 	{
 		if (std::filesystem::exists(filePath) && std::filesystem::is_directory(filePath))
 			return true;
@@ -97,12 +102,12 @@ namespace Utils
 		return false;
 	}
 
-	static std::string getUpperDirectory(const std::string& filePath)
+	static inline std::string getUpperDirectory(const std::string& filePath)
 	{
 		return std::filesystem::path(filePath).parent_path().string();
 	}
 
-	static int getFileMagicNumber(const std::string& FileInput)
+	static inline int getFileMagicNumber(const std::string& FileInput)
 	{
 		std::ifstream Reader(FileInput, std::ios::in | std::ios::binary);
 		int MagicInputFile = 0;
@@ -112,7 +117,7 @@ namespace Utils
 		return MagicInputFile;
 	}
 
-	static std::vector<std::string> sortFileByChunkName(const std::string& FileInput, const std::regex& wordRegex)
+	static inline std::vector<std::string> sortFileByChunkName(const std::string& FileInput, const std::regex& wordRegex)
 	{
 		std::vector<std::pair<int, std::string>> chunkNamePairs; // .../chunk/chunkG2.bin, first:2 , second: .../chunk/chunkG2.bin
 
@@ -141,7 +146,7 @@ namespace Utils
 	}
 
 	// https://cloud.tencent.com/developer/article/1433558
-	static std::vector<std::string> stringSplit(const std::string& in, const std::string& delim)
+	static inline std::vector<std::string> stringSplit(const std::string& in, const std::string& delim)
 	{
 		std::regex re{ delim };
 		return std::vector<std::string> {
@@ -150,17 +155,17 @@ namespace Utils
 		};
 	}
 
-	static std::string removeExtension(const std::string& fileInput)
+	static inline std::string removeExtension(const std::string& fileInput)
 	{
 		return std::filesystem::path(fileInput).replace_extension("").string();
 	}
 
-	static std::string getFileNameWithoutExtension(const std::string& fileInput)
+	static inline std::string getFileNameWithoutExtension(const std::string& fileInput)
 	{
 		return 	Utils::removeExtension(std::filesystem::path(fileInput).filename().string());
 	}
 
-	static void pause(bool autoConfirm)
+	static inline void pause(bool autoConfirm)
 	{
 		if (!autoConfirm)
 		{
@@ -169,7 +174,7 @@ namespace Utils
 		}
 	}
 
-	static std::string stringRemove(const std::string & input, const char target, bool isLast)
+	static inline std::string stringRemove(const std::string& input, const char target, bool isLast)
 	{
 		std::string output = input;
 
@@ -178,7 +183,7 @@ namespace Utils
 		if (isLast)
 		{
 			std::string::const_reverse_iterator stringEnd = std::find(input.rbegin(), input.rend(), target);
-			size_t endOfString = std::distance(stringEnd, input.rend());
+			ptrdiff_t endOfString = std::distance(stringEnd, input.rend());
 			output.erase(output.begin() + endOfString, output.end());
 		}
 		else

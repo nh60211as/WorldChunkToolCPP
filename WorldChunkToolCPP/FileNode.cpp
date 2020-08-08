@@ -51,7 +51,7 @@ void FileNode::setIsSelected(bool value)
 int FileNode::getSelectedCount()
 {
 	int count = 0;
-	for(const std::shared_ptr<FileNode>& node : Childern)
+	for (const std::shared_ptr<FileNode>& node : Childern)
 	{
 		count += node->getSelectedCount();
 	}
@@ -79,7 +79,7 @@ std::string FileNode::getSizeStr(int64_t _size)
 	}
 	else if (_size >= 1024 && _size < 1048576)
 	{
-		sizestr = std::to_string(_size/1024.0f) + " KB";
+		sizestr = std::to_string(_size / 1024.0f) + " KB";
 	}
 	else if (_size < 1073741824 && _size >= 1048576)
 	{

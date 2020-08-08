@@ -33,7 +33,7 @@ std::list<std::shared_ptr<FileNode>> ChunkOTF::AnalyzeChunk(const std::string& F
 //int ChunkCount = Reader.ReadInt32(); int ChunkPadding = ChunkCount.ToString().Length;
 	int ChunkCount;
 	Reader.read(reinterpret_cast<char*>(&ChunkCount), sizeof(ChunkCount));
-	int ChunkPadding = std::to_string(ChunkCount).size();
+	//size_t ChunkPadding = std::to_string(ChunkCount).size();
 
 	double DiskSpace = (int64_t)ChunkCount * (int64_t)0x40000 * 1e-9;
 	Utils::Print(std::to_string(ChunkCount) + " subchunks detected. Requires at least: " + std::to_string(std::round(DiskSpace * 100) / 100) + " GB.", PRINT_ORDER::AFTER);
@@ -79,7 +79,9 @@ std::list<std::shared_ptr<FileNode>> ChunkOTF::AnalyzeChunk(const std::string& F
 	ChunkDecompressed = getDecompressedChunk(cur_offset, cur_size, Reader, FlagBaseGame, cur_index);
 	if (cur_index + 1 < DictCount)
 	{
-		NextChunkDecompressed = getDecompressedChunk(ChunkOffsetDict[cur_index + 1], MetaChunk[ChunkOffsetDict[cur_index + 1]], Reader, FlagBaseGame, cur_index + 1);
+		NextChunkDecompressed = getDecompressedChunk(ChunkOffsetDict[cur_index + 1],
+			MetaChunk[ChunkOffsetDict[cur_index + 1]],
+			Reader, FlagBaseGame, static_cast<size_t>(cur_index) + 1);
 	}
 	else
 	{
@@ -88,7 +90,7 @@ std::list<std::shared_ptr<FileNode>> ChunkOTF::AnalyzeChunk(const std::string& F
 	cur_pointer = 0x0C;
 	int TotalParentCount = *(int*)(ChunkDecompressed.data() + cur_pointer);
 	cur_pointer += 4;
-	int TotalChildrenCount = *(int*)(ChunkDecompressed.data() + cur_pointer);
+	//int TotalChildrenCount = *(int*)(ChunkDecompressed.data() + cur_pointer);
 	cur_pointer = 0x100;
 	std::shared_ptr<FileNode> root_node = nullptr;
 	for (int i = 0; i < TotalParentCount; i++)
@@ -128,7 +130,7 @@ std::list<std::shared_ptr<FileNode>> ChunkOTF::AnalyzeChunk(const std::string& F
 			FileSize = getInt64(FlagBaseGame);
 			FileOffset = getInt64(FlagBaseGame);
 			EntryType = getInt32(FlagBaseGame);
-			int Unknown = getInt32(FlagBaseGame);
+			int Unknown = getInt32(FlagBaseGame); // function with side effect, keep it here
 
 			if (EntryType == 0x02)
 			{
@@ -211,7 +213,7 @@ std::list<std::shared_ptr<FileNode>> ChunkOTF::AnalyzeChunk(const std::string& F
 	return filelist;
 }
 
-std::vector<uint8_t> ChunkOTF::getDecompressedChunk(int64_t offset, int64_t size, std::ifstream& reader, bool FlagBaseGame, int chunkNum)
+std::vector<uint8_t> ChunkOTF::getDecompressedChunk(int64_t offset, int64_t size, std::ifstream& reader, bool FlagBaseGame, size_t chunkNum)
 {
 	std::vector<uint8_t> ChunkDecompressed_(0x40000);
 	if (size != 0)
@@ -222,7 +224,8 @@ std::vector<uint8_t> ChunkOTF::getDecompressedChunk(int64_t offset, int64_t size
 		reader.read(reinterpret_cast<char*>(ChunkCompressed.data()), size);
 
 		// nothing more i can do here
-		int actualSize = oo2coreInstance->Decompress(ChunkCompressed.data(), ChunkCompressed.size(), ChunkDecompressed_.data(), ChunkDecompressed_.size());
+		size_t actualSize = oo2coreInstance->Decompress(ChunkCompressed.data(), static_cast<int>(ChunkCompressed.size()),
+			ChunkDecompressed_.data(), static_cast<int>(ChunkDecompressed_.size()));
 		ChunkDecompressed_.resize(actualSize);
 	}
 	else
@@ -232,7 +235,7 @@ std::vector<uint8_t> ChunkOTF::getDecompressedChunk(int64_t offset, int64_t size
 	}
 
 	if (!FlagBaseGame)
-		ChunkDecrypter::DecryptChunk(ChunkDecompressed_.data(), ChunkDecompressed_.size(), chunkNum);
+		ChunkDecrypter::DecryptChunk(ChunkDecompressed_.data(), static_cast<int>(ChunkDecompressed_.size()), chunkNum);
 
 	return ChunkDecompressed_;
 }
@@ -285,7 +288,9 @@ void ChunkOTF::getOnLength(int64_t targetlength, uint8_t* tmpPtr, int64_t startA
 		cur_index += 1;
 		if (cur_index + 1 < DictCount)
 		{
-			NextChunkDecompressed = getDecompressedChunk(ChunkOffsetDict[cur_index + 1], MetaChunk[ChunkOffsetDict[cur_index + 1]], Reader, FlagBaseGame, cur_index + 1);
+			NextChunkDecompressed = getDecompressedChunk(ChunkOffsetDict[cur_index + 1],
+				MetaChunk[ChunkOffsetDict[cur_index + 1]],
+				Reader, FlagBaseGame, static_cast<size_t>(cur_index) + 1);
 		}
 		else
 		{
@@ -338,7 +343,7 @@ int ChunkOTF::ExtractSelected(std::list<std::shared_ptr<FileNode>>& itemlist, co
 						CurNodeChunk->MetaChunk[CurNodeChunk->ChunkOffsetDict[CurNodeChunk->cur_index + 1]],
 						CurNodeChunk->Reader,
 						FlagBaseGame,
-						CurNodeChunk->cur_index + 1
+						static_cast<size_t>(CurNodeChunk->cur_index) + 1
 					);
 				}
 				else { CurNodeChunk->NextChunkDecompressed.clear(); }
@@ -355,11 +360,11 @@ int ChunkOTF::ExtractSelected(std::list<std::shared_ptr<FileNode>>& itemlist, co
 			{
 				std::cout << "Extracting " << node->EntireName << " ...                          \r";
 				//fs::create_directories(Utils::getUpperDirectory(BaseLocation + node->EntireName)); // ok seriously how did c# do it
-				std::ofstream writer(BaseLocation + node->EntireName, std::ios::out | std::ios::binary);
+				Writer.open(BaseLocation + node->EntireName, std::ios::out | std::ios::binary);
 				std::vector<uint8_t> temp(size);
 				CurNodeChunk->getOnLength(temp.size(), temp.data(), 0, FlagBaseGame);
-				writer.write(reinterpret_cast<char*> (temp.data()), temp.size());
-				writer.close();
+				Writer.write(reinterpret_cast<char*> (temp.data()), temp.size());
+				Writer.close();
 			}
 		}
 	}

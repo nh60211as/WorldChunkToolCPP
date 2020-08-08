@@ -9,7 +9,7 @@ ChunkDecrypter::ChunkDecrypter(const std::string& chunkKeyPatternFilePath)
 	// load chunkKeyPattern, chunkKeyPattern is a static variable and must be initalized 
 	chunkKeyPattern = std::vector<uint8_t>(1000009); // set as fixed size instead of read the data size
 	std::ifstream chunkKeyReader(chunkKeyPatternFilePath, std::ios::in | std::ios::binary);
-	chunkKeyReader.read(reinterpret_cast<char*>(chunkKeyPattern.data()), chunkKeyPattern.size());
+	chunkKeyReader.read(reinterpret_cast<char*>(chunkKeyPattern.data()), static_cast<std::streamsize>(chunkKeyPattern.size()));
 	chunkKeyReader.close();
 
 	chunkKeys = std::vector<std::vector<uint8_t>>
@@ -51,9 +51,9 @@ ChunkDecrypter::ChunkDecrypter(const std::string& chunkKeyPatternFilePath)
 
 
 
-void ChunkDecrypter::DecryptChunk(uint8_t* data, const int length, const int dictionaryCount)
+void ChunkDecrypter::DecryptChunk(uint8_t* data, const int length, const size_t dictionaryCount)
 {
-	int keyPos = chunkKeyPattern[static_cast<size_t>(dictionaryCount + 8)];
+	size_t keyPos = static_cast<size_t>(chunkKeyPattern[dictionaryCount + 8u]);
 	const uint8_t* chunkKey = chunkKeys[keyPos].data(); // will it be optimized to take the reference
 
 	//for (int i = 0; i < length; i++)

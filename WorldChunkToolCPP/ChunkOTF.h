@@ -15,14 +15,15 @@ class ChunkOTF
 {
 public:
 	ChunkOTF(std::shared_ptr<oo2core_loader> oo2coreInstance_);
-	std::list<std::shared_ptr<FileNode>> AnalyzeChunk(const std::string& FileInput, std::list<std::shared_ptr<FileNode>> & inputFileList, bool FlagBaseGame);
+	std::list<std::shared_ptr<FileNode>> AnalyzeChunk(const std::string& FileInput, std::list<std::shared_ptr<FileNode>>& inputFileList, bool FlagBaseGame);
 	void createSelectedFolder(const std::list<std::shared_ptr<FileNode>>& itemlist, const std::filesystem::path& BaseLocation);
 	void createSelectedFolder(const std::list<std::shared_ptr<FileNode>>& itemlist, const std::string& BaseLocation);
-    int ExtractSelected(std::list<std::shared_ptr<FileNode>> & itemlist, const std::string& BaseLocation, bool FlagBaseGame);
+	int ExtractSelected(std::list<std::shared_ptr<FileNode>>& itemlist, const std::string& BaseLocation, bool FlagBaseGame);
 private:
 	std::map<int64_t, int64_t> MetaChunk;
 	std::map<int, int64_t> ChunkOffsetDict;
 	std::ifstream Reader;
+	std::ofstream Writer;
 	std::vector<uint8_t> ChunkDecompressed;
 	std::vector<uint8_t> NextChunkDecompressed;
 	int cur_pointer;
@@ -34,11 +35,11 @@ private:
 	// 
 	const std::shared_ptr<oo2core_loader> oo2coreInstance;
 
-	std::vector<uint8_t> getDecompressedChunk(int64_t offset, int64_t size, std::ifstream& reader, bool FlagBaseGame, int chunkNum);
+	std::vector<uint8_t> getDecompressedChunk(int64_t offset, int64_t size, std::ifstream& reader, bool FlagBaseGame, size_t chunkNum);
 	//To read an ASCII string from chunk bytes
 	std::string getName(int targetlength, bool FlagBaseGame);
 	//To read a byte array at length of targetlength
-	void getOnLength(int64_t targetlength, uint8_t * tmp, int64_t startAddr, bool FlagBaseGame);
+	void getOnLength(int64_t targetlength, uint8_t* tmp, int64_t startAddr, bool FlagBaseGame);
 	//To read int64 from chunk bytes
 	int64_t getInt64(bool FlagBaseGame);
 	//To read int32 from chunk bytes
