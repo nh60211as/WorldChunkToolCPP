@@ -13,14 +13,14 @@ namespace fs = std::filesystem;
 
 void Chunk::DecompressChunks(const std::string& FileInput, const flags currentFlag, std::shared_ptr<oo2core_loader> oo2coreInstance)
 {
-    std::string NamePKG = fs::path(FileInput).replace_extension(".pkg").string(); // finally something good out of C++17
+    std::string NamePKG = fs::current_path().string() + "\\" + fs::path(FileInput).filename().replace_extension(".pkg").string(); // finally something good out of C++17
     std::ifstream Reader(FileInput, std::ios::in | std::ios::binary);
 
     // Key = ChunkOffset, Value = ChunkSize
     // C# Dictionary is implemented as a hash table
     // https://docs.microsoft.com/en-us/dotnet/api/system.collections.generic.dictionary-2?view=netcore-3.1
     // Dictionary<long, long> MetaChunk = new Dictionary<long, long>();
-    std::map<int64_t, int64_t> MetaChunk;
+    std::vector<std::pair<int64_t, int64_t>> MetaChunk;
 
     // Read header
     //Reader.BaseStream.Seek(4, SeekOrigin.Begin);
@@ -61,23 +61,22 @@ void Chunk::DecompressChunks(const std::string& FileInput, const flags currentFl
         //long ChunkOffset = BitConverter.ToInt64(ArrayTmp2, 0);
         int64_t ChunkOffset = *(int64_t*)(ArrayChunkOffset.data());
 
-        MetaChunk.emplace(ChunkOffset, ChunkSize);
+        MetaChunk.emplace_back(ChunkOffset, ChunkSize);
     }
 
     // Write decompressed chunks to pkg
     //BinaryWriter Writer = new BinaryWriter(File.Create(NamePKG));
     std::ofstream Writer(NamePKG, std::ios::out | std::ios::binary);
-
     int DictCount = 1;
-
     
-    for(const std::pair<int64_t, int64_t> & Entry : MetaChunk)
+    for(const std::pair<int64_t,int64_t> & Entry : MetaChunk)
     {
         int64_t Key = Entry.first;
         int64_t Value = Entry.second;
         std::vector<uint8_t> ChunkDecompressed(0x40000);
 
-        std::cout << "\rProcessing " << DictCount << "/" << ChunkCount << "\n";
+        //std::cout << "\rProcessing " << DictCount << "/" << ChunkCount << "\n";
+        std::cout << "\rProcessing " << std::right << std::setfill(' ') << std::setw(4) << std::to_string(DictCount) << " / " << ChunkCount << "..." << std::flush;
         if (Value != 0)
         {
             Reader.seekg(Key, std::ios_base::beg); // skipping the MagicChunk of size int
@@ -101,8 +100,8 @@ void Chunk::DecompressChunks(const std::string& FileInput, const flags currentFl
     Reader.close();
     Writer.close();
 
-    Utils::Print("Finished.", PRINT_ORDER::AFTER);
-    Utils::Print("Output at: " + NamePKG, PRINT_ORDER::BEFORE);
+    Utils::Print("Finished.", PRINT_ORDER::BEFORE);
+    Utils::Print("Output at: " + NamePKG, PRINT_ORDER::AFTER);
 
     //// Write csv
     Utils::Print("Writing file list.", PRINT_ORDER::AFTER);
