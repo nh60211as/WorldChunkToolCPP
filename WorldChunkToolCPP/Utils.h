@@ -60,7 +60,7 @@ namespace Utils
 		return missingFileList;
 	}
 
-	static void Print(const std::string& Input, PRINT_ORDER order)
+	static inline void Print(const std::string& Input, PRINT_ORDER order)
 	{
 		if (order == PRINT_ORDER::AFTER)
 		{
@@ -174,6 +174,7 @@ namespace Utils
 		std::string output = input;
 
 		// I don't even know if this will work
+		// It actually works
 		if (isLast)
 		{
 			std::string::const_reverse_iterator stringEnd = std::find(input.rbegin(), input.rend(), target);
