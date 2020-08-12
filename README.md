@@ -1,5 +1,6 @@
 # WorldChunkToolCPP
 C++ implementation of https://github.com/mhvuze/WorldChunkTool
+The released executable are compiled with AVX2 enabled. Make sure your CPU support it or compile it yourself.
 
 # The following are copied from https://github.com/mhvuze/WorldChunkTool
 ## WorldChunkTool
