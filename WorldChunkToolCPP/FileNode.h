@@ -31,7 +31,7 @@ public:
 
 	int getSelectedCount();
 
-	void setChilrenSelected(bool selected);
+	void setChildrenSelected(bool selected);
 
 	int64_t getSize();
 

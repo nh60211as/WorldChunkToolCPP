@@ -41,7 +41,7 @@ bool FileNode::IsSelected()
 void FileNode::setIsSelected(bool value)
 {
 	isSelected = value;
-	setChilrenSelected(value);
+	setChildrenSelected(value);
 	//if (this.PropertyChanged != null)
 	//{
 	//	this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("IsSelected"));
@@ -62,7 +62,7 @@ int FileNode::getSelectedCount()
 	return count;
 }
 
-void FileNode::setChilrenSelected(bool selected)
+void FileNode::setChildrenSelected(bool selected)
 {
 	for (const std::shared_ptr<FileNode>& child : Childern)
 	{
