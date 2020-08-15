@@ -4,7 +4,6 @@
 #include <string>
 #include <memory>
 
-#include "Utils.h"
 #include "oo2core_loader.h"
 
 class Chunk

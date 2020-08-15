@@ -4,16 +4,17 @@
 // reference: https://en.uesp.net/wiki/ESOMod:DAT_File_Format
 #include <Windows.h>
 #include <cstdint>
-#include <vector>
+#include <string>
 
-static constexpr const char* oo2coreSHA256 = "D5440627BBDE1EF2D9730976DD90C5189D874FB7BB808669734E598CDFDBA8D9";
+#include "Utils.h"
 
 typedef int __stdcall OodleLZ_Compress_Func(uint32_t fmt, byte* buffer, int bufferSize, byte* outputBuffer, int level, void* unused1, void* unused2, void* unused3);
 typedef int __stdcall OodleLZ_Decompress_Func(byte* buffer, int bufferSize, byte* outputBuffer, int outputBufferSize, int a, int b, int c, void* d, void* e, void* f, void* g, void* h, void* i, int threadModule);
+
 class oo2core_loader
 {
 public:
-	oo2core_loader();
+	oo2core_loader(const std::string& oo2coreFilePath = OO2CORE_FILE_NAME);
 	~oo2core_loader();
 
 	// use explict operator to check if the library is loaded

@@ -25,7 +25,7 @@ void PKG::ExtractPKG(const std::string& FileInput, bool FlagAutoConfirm, bool Fl
 	int TotalChildrenCount = 0;
 	Reader.read(reinterpret_cast<char*>(&TotalChildrenCount), sizeof(TotalChildrenCount));
 	if (!OnlyLog)
-		Utils::Print("PKG file has " + std::to_string(TotalParentCount) + " parent entries with " + std::to_string(TotalChildrenCount) + " children entries.", PRINT_ORDER::BEFORE);
+		Utils::PrintWithSeparationLine("PKG file has " + std::to_string(TotalParentCount) + " parent entries with " + std::to_string(TotalChildrenCount) + " children entries.", PRINT_ORDER::BEFORE);
 
 	Reader.seekg(0x100, std::ios::beg);
 	for (int i = 0; i < TotalParentCount; i++)
@@ -126,8 +126,8 @@ void PKG::ExtractPKG(const std::string& FileInput, bool FlagAutoConfirm, bool Fl
 	Reader.close();
 	LogWriter.close();
 
-	if (!OnlyLog) Utils::Print("Finished.", PRINT_ORDER::BEFORE);
-	if (!OnlyLog) Utils::Print("Output at: " + OutputDirectory, PRINT_ORDER::AFTER);
+	if (!OnlyLog) Utils::PrintWithSeparationLine("Finished.", PRINT_ORDER::BEFORE);
+	if (!OnlyLog) Utils::PrintWithSeparationLine("Output at: " + OutputDirectory, PRINT_ORDER::AFTER);
 	Utils::pause(FlagAutoConfirm);
 
 }

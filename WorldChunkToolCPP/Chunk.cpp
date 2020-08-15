@@ -31,7 +31,7 @@ void Chunk::DecompressChunks(const std::string& FileInput, const flags currentFl
 	std::streamsize ChunkPadding = static_cast<std::streamsize>(std::to_string(ChunkCount).size());
 
 	double DiskSpace = static_cast<double>((int64_t)ChunkCount * (int64_t)0x40000 * 1e-9);
-	Utils::Print(std::to_string(ChunkCount) + " subchunks detected. Requires at least: " + std::to_string(std::round(DiskSpace * 100) / 100) + " GB.", PRINT_ORDER::AFTER);
+	Utils::PrintWithSeparationLine(std::to_string(ChunkCount) + " subchunks detected. Requires at least: " + std::to_string(std::round(DiskSpace * 100) / 100) + " GB.", PRINT_ORDER::AFTER);
 
 	// Read file list
 	int64_t totalChunkSize = 0;
@@ -101,10 +101,10 @@ void Chunk::DecompressChunks(const std::string& FileInput, const flags currentFl
 	Reader.close();
 	Writer.close();
 
-	Utils::Print("Finished.", PRINT_ORDER::BEFORE);
-	Utils::Print("Output at: " + NamePKG, PRINT_ORDER::AFTER);
+	Utils::PrintWithSeparationLine("Finished.", PRINT_ORDER::BEFORE);
+	Utils::PrintWithSeparationLine("Output at: " + NamePKG, PRINT_ORDER::AFTER);
 
 	//// Write csv
-	Utils::Print("Writing file list.", PRINT_ORDER::AFTER);
+	Utils::PrintWithSeparationLine("Writing file list.", PRINT_ORDER::AFTER);
 	PKG::ExtractPKG(NamePKG, currentFlag.FlagAutoConfirm, currentFlag.FlagUnpackAll, true);
 }

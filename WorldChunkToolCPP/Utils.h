@@ -8,9 +8,11 @@
 #include <regex>
 
 // necessary file names
-//static constexpr const char* oo2coreFileName = "./oo2core_8_win64.dll";
-#define OO2CORE_FILE_NAME "./oo2core_8_win64.dll"
+static constexpr const char* OO2CORE_FILE_NAME = "./oo2core_8_win64.dll";
 static constexpr const char* CHUNK_KEY_SEQUENCE_FILE_NAME = "./keySequence.bin";
+
+// file hash of OO2CORE_FILE_NAME
+static constexpr const char* OO2CORE_SHA256 = "D5440627BBDE1EF2D9730976DD90C5189D874FB7BB808669734E598CDFDBA8D9";
 
 // flags for user input
 struct flags
@@ -20,16 +22,12 @@ struct flags
 	bool FlagAutoConfirm;
 	bool FlagUnpackAll;
 
-	flags()
+	flags() : FlagBuildPkg(false), FlagBaseGame(false), FlagAutoConfirm(false), FlagUnpackAll(false)
 	{
-		FlagBuildPkg = false;
-		FlagBaseGame = false;
-		FlagAutoConfirm = false;
-		FlagUnpackAll = false;
 	};
 };
 
-// print order for Util::Print()
+// print order for Util::PrintWithSeparationLine()
 enum class PRINT_ORDER : bool
 {
 	BEFORE = false,
@@ -65,7 +63,7 @@ namespace Utils
 		return missingFileList;
 	}
 
-	static inline void Print(const std::string& Input, PRINT_ORDER order)
+	static inline void PrintWithSeparationLine(const std::string& Input, PRINT_ORDER order)
 	{
 		if (order == PRINT_ORDER::AFTER)
 		{

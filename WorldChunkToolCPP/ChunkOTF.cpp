@@ -1,10 +1,10 @@
 #include "ChunkOTF.h"
 
 #include <filesystem>
-#include <cmath>
 #include <array>
 
 #include "Utils.h"
+#include "ChunkDecrypter.h"
 
 namespace fs = std::filesystem;
 
@@ -36,7 +36,7 @@ std::list<std::shared_ptr<FileNode>> ChunkOTF::AnalyzeChunk(const std::string& F
 	//size_t ChunkPadding = std::to_string(ChunkCount).size();
 
 	double DiskSpace = (int64_t)ChunkCount * (int64_t)0x40000 * 1e-9;
-	Utils::Print(std::to_string(ChunkCount) + " subchunks detected. Requires at least: " + std::to_string(std::round(DiskSpace * 100) / 100) + " GB.", PRINT_ORDER::AFTER);
+	Utils::PrintWithSeparationLine(std::to_string(ChunkCount) + " subchunks detected. Requires at least: " + std::to_string(std::round(DiskSpace * 100) / 100) + " GB.", PRINT_ORDER::AFTER);
 
 	// Read file list
 	DictCount = 0;

@@ -8,7 +8,6 @@
 
 #include "FileNode.h"
 #include "oo2core_loader.h"
-#include "ChunkDecrypter.h"
 
 // on the fly chunk processor
 class ChunkOTF
@@ -32,7 +31,7 @@ private:
 	std::string fileinput;
 	std::map<int, std::vector<uint8_t>> ChunkCache;
 
-	// 
+	// pointer the oo2core_loader instance
 	const std::shared_ptr<oo2core_loader> oo2coreInstance;
 
 	std::vector<uint8_t> getDecompressedChunk(int64_t offset, int64_t size, std::ifstream& reader, bool FlagBaseGame, size_t chunkNum);
