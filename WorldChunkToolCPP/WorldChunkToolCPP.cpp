@@ -49,7 +49,10 @@ int main(int argc, char* argv[])
 
 	// load oo2core_8_win64.dll
 	std::shared_ptr<oo2core_loader> oo2coreInstance = std::make_shared<oo2core_loader>();
-	if (!oo2coreInstance) // if the library is not loaded
+
+	// this is explict operator to check if the library is loaded correctly, 
+	// not checking if the oo2coreInstance pointer points to an actual address
+	if (!(*oo2coreInstance)) 
 	{
 		std::cout << OO2CORE_FILE_NAME << " not found.\n";
 		std::cout << "Place it at the same folder as WorldChunkTool.exe.\n";
