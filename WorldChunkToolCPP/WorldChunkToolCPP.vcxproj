@@ -160,6 +160,7 @@
     <ClInclude Include="Chunk.h" />
     <ClInclude Include="ChunkDecrypter.h" />
     <ClInclude Include="ChunkOTF.h" />
+    <ClInclude Include="DefaultInitAllocator.h" />
     <ClInclude Include="FileNode.h" />
     <ClInclude Include="oo2core_loader.h" />
     <ClInclude Include="PKG.h" />

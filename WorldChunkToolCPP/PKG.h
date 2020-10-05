@@ -6,7 +6,7 @@
 class PKG
 {
 public:
-	static void ExtractPKG(const std::string& FileInput, bool FlagAutoConfirm, bool FlagUnpackAll, bool OnlyLog);
+    static void ExtractPKG(const std::string& FileInput, bool FlagAutoConfirm, bool FlagUnpackAll, bool OnlyLog);
 };
 
 #endif

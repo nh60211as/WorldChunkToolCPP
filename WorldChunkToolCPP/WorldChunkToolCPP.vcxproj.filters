@@ -59,5 +59,8 @@
     <ClInclude Include="PKG.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DefaultInitAllocator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
