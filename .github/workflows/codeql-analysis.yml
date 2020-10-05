@@ -62,6 +62,9 @@ jobs:
     # ✏️ If the Autobuild fails above, remove it and uncomment the following three lines
     #    and modify them (or add more) to build your code if your project
     #    uses a compiled language
+    - name: setup-msbuild
+      uses: microsoft/setup-msbuild@v1.0.1
+    
     - name: Build Solution
       run: |
         mkdir build
