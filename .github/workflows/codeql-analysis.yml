@@ -66,10 +66,7 @@ jobs:
       uses: microsoft/setup-msbuild@v1.0.1
     
     - name: Build Solution
-      run: |
-        mkdir build
-        cd build
-        MSBuild.exe WorldChunkToolCPP.sln
+      run: MSBuild.exe WorldChunkToolCPP.sln
     #- run: |
     #   make bootstrap
     #   make release
