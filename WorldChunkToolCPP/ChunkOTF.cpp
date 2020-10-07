@@ -35,7 +35,7 @@ std::list<std::shared_ptr<FileNode>> ChunkOTF::AnalyzeChunk(const std::string& F
     Reader.read(reinterpret_cast<char*>(&ChunkCount), sizeof(ChunkCount));
     //size_t ChunkPadding = std::to_string(ChunkCount).size();
 
-    double DiskSpace = (int64_t)ChunkCount * (int64_t)0x40000 * 1e-9;
+    double DiskSpace = (int64_t)ChunkCount * defaultChunkSize * 1e-9;
     Utils::PrintWithSeparationLine(std::to_string(ChunkCount) + " subchunks detected. Requires at least: " + std::to_string(std::round(DiskSpace * 100) / 100) + " GB.", PRINT_ORDER::AFTER);
 
     // Read file list
@@ -157,8 +157,8 @@ std::list<std::shared_ptr<FileNode>> ChunkOTF::AnalyzeChunk(const std::string& F
             {
                 child_node->Size = FileSize;
                 child_node->Offset = FileOffset;
-                child_node->ChunkIndex = (int)(FileOffset / 0x40000);
-                child_node->ChunkPointer = (int)(FileOffset % 0x40000);
+                child_node->ChunkIndex = (int)(FileOffset / defaultChunkSize);
+                child_node->ChunkPointer = (int)(FileOffset % defaultChunkSize);
             }
             child_node->EntireName = StringNameChild;
             std::shared_ptr<FileNode> target_node = root_node;
@@ -215,7 +215,7 @@ std::list<std::shared_ptr<FileNode>> ChunkOTF::AnalyzeChunk(const std::string& F
 
 std::shared_ptr<chunk_t> ChunkOTF::getDecompressedChunk(int64_t offset, int64_t size, std::ifstream& reader, bool FlagBaseGame, size_t chunkNum) noexcept
 {
-    std::shared_ptr<chunk_t> ChunkDecompressed_ = std::make_shared<chunk_t>(0x40000);
+    std::shared_ptr<chunk_t> ChunkDecompressed_ = std::make_shared<chunk_t>(defaultChunkSize);
     if (size != 0)
     {
         reader.seekg(offset, std::ios_base::beg);
@@ -276,14 +276,14 @@ int ChunkOTF::getInt32(bool FlagBaseGame) noexcept
 
 void ChunkOTF::getOnLength(int64_t targetlength, uint8_t* tmpPtr, int64_t startAddr, bool FlagBaseGame) noexcept
 {
-    if (cur_pointer + targetlength < 0x40000)
+    if (cur_pointer + targetlength < defaultChunkSize)
     {
         std::copy(std::begin(*ChunkDecompressed) + cur_pointer, std::begin(*ChunkDecompressed) + cur_pointer + targetlength, tmpPtr + startAddr);
         cur_pointer += (int)targetlength;
     }
     else
     {
-        int tmp_can_read_length = 0x40000 - cur_pointer;
+        int tmp_can_read_length = defaultChunkSize - cur_pointer;
         int64_t tmp_remain_length = targetlength - tmp_can_read_length;
         std::copy(std::begin(*ChunkDecompressed) + cur_pointer, std::begin(*ChunkDecompressed) + cur_pointer + tmp_can_read_length, tmpPtr + startAddr);
         cur_pointer = 0;

@@ -39,6 +39,7 @@ enum class PRINT_ORDER : bool
 static constexpr int MagicChunk = 0x00504D43;
 static constexpr int MagicPKG = 0x20474B50;
 
+static constexpr size_t defaultChunkSize = 0x40000;
 
 // all of the functions here are reported as C4505
 // https://docs.microsoft.com/en-us/cpp/error-messages/compiler-warnings/compiler-warning-level-4-c4505?view=vs-2019
