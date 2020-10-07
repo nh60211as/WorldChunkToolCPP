@@ -64,22 +64,20 @@ void ChunkDecrypter::DecryptChunk(uint8_t* data, const int length, const size_t 
     int i = 0;
     for (; i < (length / 16) * 16; i += 16)
     {
-        *(uint32_t*)(&data[i]) ^= *(uint32_t*)(&chunkKey[0]);
+        *(uint64_t*)(&data[i]) ^= *(uint64_t*)(&chunkKey[0]);
         //data[i + 0] ^= chunkKey[0];
         //data[i + 1] ^= chunkKey[1];
         //data[i + 2] ^= chunkKey[2];
         //data[i + 3] ^= chunkKey[3];
-        *(uint32_t*)(&data[i + 4]) ^= *(uint32_t*)(&chunkKey[4]);
         //data[i + 4] ^= chunkKey[4];
         //data[i + 5] ^= chunkKey[5];
         //data[i + 6] ^= chunkKey[6];
         //data[i + 7] ^= chunkKey[7];
-        *(uint32_t*)(&data[i + 8]) ^= *(uint32_t*)(&chunkKey[8]);
+        *(uint64_t*)(&data[i + 8]) ^= *(uint64_t*)(&chunkKey[8]);
         //data[i + 8] ^= chunkKey[8];
         //data[i + 9] ^= chunkKey[9];
         //data[i + 10] ^= chunkKey[10];
         //data[i + 11] ^= chunkKey[11];
-        *(uint32_t*)(&data[i + 12]) ^= *(uint32_t*)(&chunkKey[12]);
         //data[i + 12] ^= chunkKey[12];
         //data[i + 13] ^= chunkKey[13];
         //data[i + 14] ^= chunkKey[14];
