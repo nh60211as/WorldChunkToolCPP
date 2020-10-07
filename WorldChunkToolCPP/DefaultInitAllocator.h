@@ -2,8 +2,10 @@
 #define DEFAULTINITALLOCATOR_H
 
 #include <type_traits>
-// https://stackoverflow.com/a/15119665/11947017
-// this implementation is from VC++ 2019
+
+// This implementation is from VC++ 2019.
+// it simply disable zero initialization by not doing anything in construct() and destroy().
+// Currently using C++17 standard. Might need to update the usage starting from C++20.
 
 using true_type = std::bool_constant<true>;
 using false_type = std::bool_constant<false>;
@@ -51,12 +53,12 @@ public:
     constexpr DefaultInitAllocator(const DefaultInitAllocator<_Other>&) noexcept {}
 
     void deallocate(_Ty* const _Ptr, const size_t _Count) {
-        //std::_Deallocate<std::_New_alignof<_Ty>>(_Ptr, sizeof(_Ty) * _Count);
-        ::operator delete[](static_cast<void*>(_Ptr), _Count);
+        // no overflow check on the following multiply; we assume _Allocate did that check
+        std::_Deallocate<std::_New_alignof<_Ty>>(_Ptr, sizeof(_Ty) * _Count);
     }
 
     _NODISCARD __declspec(allocator) _Ty* allocate(_CRT_GUARDOVERFLOW const size_t _Count) {
-        return static_cast<_Ty*>(::operator new (std::_Get_size_of_n<sizeof(_Ty)>(_Count)));
+        return static_cast<_Ty*>(std::_Allocate<std::_New_alignof<_Ty>>(std::_Get_size_of_n<sizeof(_Ty)>(_Count)));
     }
 
     _CXX17_DEPRECATE_OLD_ALLOCATOR_MEMBERS _NODISCARD __declspec(allocator) _Ty* allocate(
@@ -66,12 +68,12 @@ public:
 
     template <class _Objty, class... _Types>
     _CXX17_DEPRECATE_OLD_ALLOCATOR_MEMBERS void construct(_Objty* const _Ptr, _Types&&... _Args) {
-        ::new (const_cast<void*>(static_cast<const volatile void*>(_Ptr))) _Objty(_STD forward<_Types>(_Args)...);
+        //::new (const_cast<void*>(static_cast<const volatile void*>(_Ptr))) _Objty(_STD forward<_Types>(_Args)...);
     }
 
     template <class _Uty>
     _CXX17_DEPRECATE_OLD_ALLOCATOR_MEMBERS void destroy(_Uty* const _Ptr) {
-        _Ptr->~_Uty();
+        //_Ptr->~_Uty();
     }
 
     _CXX17_DEPRECATE_OLD_ALLOCATOR_MEMBERS _NODISCARD size_t max_size() const noexcept {
