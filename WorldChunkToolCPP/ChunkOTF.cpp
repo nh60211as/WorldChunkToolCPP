@@ -332,7 +332,9 @@ int ChunkOTF::ExtractSelected(std::list<std::shared_ptr<FileNode>>& itemlist, st
             }
             else
             {
-                if (CurNodeChunk->ChunkCache.size() > 20) CurNodeChunk->ChunkCache.clear();
+                if (CurNodeChunk->ChunkCache.size() > 20)
+                    CurNodeChunk->ChunkCache.clear();
+
                 CurNodeChunk->ChunkDecompressed = CurNodeChunk->getDecompressedChunk(
                     CurNodeChunk->ChunkOffsetDict[CurNodeChunk->cur_index],
                     CurNodeChunk->MetaChunk[CurNodeChunk->ChunkOffsetDict[CurNodeChunk->cur_index]],
@@ -341,13 +343,16 @@ int ChunkOTF::ExtractSelected(std::list<std::shared_ptr<FileNode>>& itemlist, st
                     CurNodeChunk->cur_index);
                 CurNodeChunk->ChunkCache.emplace(CurNodeChunk->cur_index, CurNodeChunk->ChunkDecompressed);
             }
+
             if (CurNodeChunk->ChunkCache.find(CurNodeChunk->cur_index + 1) != CurNodeChunk->ChunkCache.end())
             {
                 CurNodeChunk->NextChunkDecompressed = CurNodeChunk->ChunkCache[CurNodeChunk->cur_index + 1];
             }
             else
             {
-                if (CurNodeChunk->ChunkCache.size() > 20) CurNodeChunk->ChunkCache.clear();
+                if (CurNodeChunk->ChunkCache.size() > 20)
+                    CurNodeChunk->ChunkCache.clear();
+
                 if (CurNodeChunk->cur_index + 1 < CurNodeChunk->DictCount)
                 {
                     CurNodeChunk->NextChunkDecompressed = CurNodeChunk->getDecompressedChunk(
@@ -357,7 +362,9 @@ int ChunkOTF::ExtractSelected(std::list<std::shared_ptr<FileNode>>& itemlist, st
                         FlagBaseGame,
                         static_cast<size_t>(CurNodeChunk->cur_index) + 1);
                 }
-                else { CurNodeChunk->NextChunkDecompressed->clear(); }
+                else
+                    CurNodeChunk->NextChunkDecompressed->clear();
+
                 CurNodeChunk->ChunkCache.emplace(CurNodeChunk->cur_index + 1, CurNodeChunk->NextChunkDecompressed);
             }
             //if (!node->IsFile)
